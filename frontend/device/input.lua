@@ -109,6 +109,10 @@ local Input = {
     event_map = nil, -- hash
     -- adapters are post processing functions that transform a given event to another event
     event_map_adapter = nil, -- hash
+    -- Optional resolver installed by a physical-keyboard plugin: given a key name
+    -- and the modifiers table, returns the composed character (or nil). When set,
+    -- printable key presses also emit a TextInput event, mirroring SDL.
+    hw_text_layout = nil,
     -- EV_ABS event to honor for pressure event (if any)
     pressure_event = nil,
 
@@ -899,6 +903,17 @@ function Input:handleKeyBoardEv(ev)
     end
 
     local key = Key:new(keycode, self.modifiers)
+
+    -- Physical keyboards that provide a text layout emit a composed character as
+    -- a TextInput event (like SDL), in addition to the KeyPress below: focused
+    -- text fields insert the glyph via onTextInput, while shortcuts still see the
+    -- KeyPress. Printable keys don't repeat on-device, so emit on press only.
+    if self.hw_text_layout and ev.value == KEY_PRESS then
+        local ch = self.hw_text_layout(keycode, self.modifiers)
+        if ch then
+            UIManager:sendEvent(Event:new("TextInput", ch))
+        end
+    end
 
     if ev.value == KEY_PRESS then
         return Event:new("KeyPress", key)
