@@ -278,6 +278,7 @@ function ExternalKeyboard:_onEvdevInputRemove(event_path)
     -- If that was the last keyboard we knew about, restore native input-related device caps.
     if ExternalKeyboard.connected_keyboards == 0 and ExternalKeyboard.original_device_values then
         Device.input.event_map = ExternalKeyboard.original_device_values.event_map
+        Device.input.hw_text_layout = ExternalKeyboard.original_device_values.hw_text_layout
         Device.keyboard_layout = ExternalKeyboard.original_device_values.keyboard_layout
         Device.hasKeyboard = ExternalKeyboard.original_device_values.hasKeyboard
         Device.hasKeys = ExternalKeyboard.original_device_values.hasKeys
@@ -409,6 +410,7 @@ function ExternalKeyboard:setupKeyboard(data)
     if not ExternalKeyboard.original_device_values then
         ExternalKeyboard.original_device_values = {
             event_map = Device.input.event_map,
+            hw_text_layout = Device.input.hw_text_layout,
             keyboard_layout = Device.keyboard_layout,
             hasKeyboard = Device.hasKeyboard,
             hasKeys = Device.hasKeys,
@@ -422,6 +424,10 @@ function ExternalKeyboard:setupKeyboard(data)
     util.tableMerge(event_map, Device.input.event_map)
     util.tableMerge(event_map, dofile("plugins/externalkeyboard.koplugin/event_map_keyboard.lua"))
     Device.input.event_map = event_map
+    local KeyboardLayout = dofile("plugins/externalkeyboard.koplugin/keyboard_layout.lua")
+    Device.input.hw_text_layout = function(key_name, modifiers)
+        return KeyboardLayout.resolve("us", key_name, modifiers)
+    end
     Device.hasKeyboard = yes
     Device.hasKeys = yes
     Device.hasFewKeys = no
