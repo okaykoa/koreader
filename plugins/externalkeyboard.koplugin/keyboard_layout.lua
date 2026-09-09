@@ -61,6 +61,9 @@ M.layouts = setmetatable({}, {
 
 function M.resolve(layout_name, key_name, modifiers)
     if type(key_name) ~= "string" then return nil end
+    if pending_dead_key and pending_dead_key.layout_name ~= layout_name then
+        pending_dead_key = nil
+    end
     modifiers = modifiers or {}
     local level = 0
     for name, active in pairs(modifiers) do
@@ -89,7 +92,10 @@ function M.resolve(layout_name, key_name, modifiers)
     end
 
     if type(value) == "table" then
-        pending_dead_key = DEAD_KEYS[value.dead]
+        pending_dead_key = {
+            layout_name = layout_name,
+            value = DEAD_KEYS[value.dead],
+        }
         return nil
     end
     if not value then
@@ -99,8 +105,8 @@ function M.resolve(layout_name, key_name, modifiers)
     if pending_dead_key then
         local dead_key = pending_dead_key
         pending_dead_key = nil
-        if value == " " and dead_key[2] then return dead_key[2] end
-        return Utf8Proc.normalize_NFC(value .. dead_key[1])
+        if value == " " and dead_key.value[2] then return dead_key.value[2] end
+        return Utf8Proc.normalize_NFC(value .. dead_key.value[1])
     end
     return value
 end

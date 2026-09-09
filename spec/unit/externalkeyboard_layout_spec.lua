@@ -75,6 +75,15 @@ describe("ExternalKeyboard layout resolver (us)", function()
         assert.are.equal("x\204\130", KeyboardLayout.resolve("test_dead", "X"))
     end)
 
+    it("does not apply a pending dead key after changing layouts", function()
+        KeyboardLayout.layouts.test_dead = {
+            ["'"] = { { dead = "dead_acute" } },
+        }
+        assert.is_nil(KeyboardLayout.resolve("test_dead", "'"))
+        assert.are.equal("e", KeyboardLayout.resolve("us", "E"))
+        assert.are.equal("e", KeyboardLayout.resolve("test_dead", "E"))
+    end)
+
     it("returns nil for keys it does not handle", function()
         assert.is_nil(r("F1"))
         assert.is_nil(r("Home"))
