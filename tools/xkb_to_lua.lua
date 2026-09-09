@@ -11,6 +11,7 @@ preserved for runtime composition.
 Examples:
     tools/xkb_to_lua.lua us
     tools/xkb_to_lua.lua de > /tmp/de.lua
+    tools/xkb_to_lua.lua --common
     tools/xkb_to_lua.lua --all
     tools/xkb_to_lua.lua --all-variants
 ]]--
@@ -188,6 +189,19 @@ local KOREADER_XKB_LAYOUTS = {
     zh_CN = { "cn", "basic" },
 }
 
+local COMMON_XKB_LAYOUTS = {
+    { "us", "us", "basic" },
+    { "us-altgr-intl", "us", "altgr-intl" },
+    { "gb", "gb", "basic" },
+    { "de", "de", "basic" },
+    { "fr", "fr", "basic" },
+    { "es", "es", "basic" },
+    { "it", "it", "basic" },
+    { "nl", "nl", "basic" },
+    { "be", "be", "basic" },
+    { "br", "br", "abnt2" },
+}
+
 -- KOReader interface languages that have no virtual keyboard layout, plus
 -- commonly used national layouts for the same language.
 local KOREADER_EXTRA_XKB_LAYOUTS = {
@@ -235,6 +249,18 @@ local function available_koreader_layouts()
     return layouts
 end
 
+local function available_common_layouts()
+    local layouts = {}
+    for _, layout_info in ipairs(COMMON_XKB_LAYOUTS) do
+        table.insert(layouts, {
+            language = layout_info[1],
+            layout = layout_info[2],
+            variant = layout_info[3],
+        })
+    end
+    return layouts
+end
+
 local function available_koreader_layout_variants(symbols_dir)
     local layouts = available_koreader_layouts()
     local variants = {}
@@ -267,6 +293,7 @@ end
 
 local function usage()
     io.stderr:write("Usage: tools/xkb_to_lua.lua <layout> [--variant NAME] [--layout-name NAME] [--symbols-dir PATH] [--output PATH]\n")
+    io.stderr:write("       tools/xkb_to_lua.lua --common [--symbols-dir PATH] [--output-dir PATH]  # curated common layouts\n")
     io.stderr:write("       tools/xkb_to_lua.lua --all [--symbols-dir PATH] [--output-dir PATH]  # KOReader physical keyboard layouts\n")
     io.stderr:write("       tools/xkb_to_lua.lua --all-variants [--symbols-dir PATH] [--output-dir PATH]  # layouts and variants\n")
 end
@@ -281,6 +308,8 @@ local function parse_arguments()
             os.exit(0)
         elseif value == "--all" then
             arguments.all = true
+        elseif value == "--common" then
+            arguments.common = true
         elseif value == "--all-variants" then
             arguments.all_variants = true
         elseif value == "--variant" or value == "--layout-name" or value == "--symbols-dir" or value == "--output" or value == "--output-dir" then
@@ -294,10 +323,10 @@ local function parse_arguments()
         end
         index = index + 1
     end
-    assert(arguments.layout or arguments.all or arguments.all_variants, "layout, --all, or --all-variants is required")
-    assert(not (arguments.layout and (arguments.all or arguments.all_variants)), "batch export cannot be combined with a layout")
-    assert(not (arguments.all and arguments.all_variants), "--all and --all-variants cannot be combined")
-    assert(not ((arguments.all or arguments.all_variants) and (arguments.variant ~= "basic" or arguments.layout_name or arguments.output)), "batch export only supports --symbols-dir and --output-dir")
+    assert(arguments.layout or arguments.common or arguments.all or arguments.all_variants, "layout, --common, --all, or --all-variants is required")
+    assert(not (arguments.layout and (arguments.common or arguments.all or arguments.all_variants)), "batch export cannot be combined with a layout")
+    assert(not ((arguments.common and arguments.all) or (arguments.common and arguments.all_variants) or (arguments.all and arguments.all_variants)), "only one batch export option may be used")
+    assert(not ((arguments.common or arguments.all or arguments.all_variants) and (arguments.variant ~= "basic" or arguments.layout_name or arguments.output)), "batch export only supports --symbols-dir and --output-dir")
     return arguments
 end
 
@@ -343,11 +372,13 @@ local function add_space_entry(entries)
 end
 
 local arguments = parse_arguments()
-if arguments.all or arguments.all_variants then
+if arguments.common or arguments.all or arguments.all_variants then
     local output_dir = arguments.output_dir or DEFAULT_OUTPUT_DIR
     local written = 0
     local skipped = 0
-    local layouts = arguments.all_variants and available_koreader_layout_variants(arguments.symbols_dir) or available_koreader_layouts()
+    local layouts = arguments.all_variants and available_koreader_layout_variants(arguments.symbols_dir)
+        or arguments.all and available_koreader_layouts()
+        or available_common_layouts()
     for _, layout_info in ipairs(layouts) do
         local success, entries = pcall(load_layout, arguments.symbols_dir, layout_info.layout, layout_info.variant)
         if success and next(entries) then
