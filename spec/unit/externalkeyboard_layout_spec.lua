@@ -43,12 +43,12 @@ describe("ExternalKeyboard layout resolver (us)", function()
         assert.is_nil(KeyboardLayout.resolve("us", "1", { Shift = true, AltGr = true }))
     end)
 
-    it("uses RAlt as AltGr for generated layouts", function()
+    it("uses AltGr for generated layouts", function()
         KeyboardLayout.layouts.test_altgr = {
             ["1"] = { "1", "!", "@", "#" },
         }
-        assert.are.equal("@", KeyboardLayout.resolve("test_altgr", "1", { RAlt = true }))
-        assert.are.equal("#", KeyboardLayout.resolve("test_altgr", "1", { Shift = true, RAlt = true }))
+        assert.are.equal("@", KeyboardLayout.resolve("test_altgr", "1", { AltGr = true }))
+        assert.are.equal("#", KeyboardLayout.resolve("test_altgr", "1", { Shift = true, AltGr = true }))
     end)
 
     it("resolves the ISO extra key", function()
@@ -90,7 +90,7 @@ describe("ExternalKeyboard layout resolver (us)", function()
             ["E"] = { "e", "E", "€", "¢" },
         }
         assert.are.equal("€", KeyboardLayout.resolve("test_altgr_shortcuts", "E", { AltGr = true }))
-        assert.are.equal("¢", KeyboardLayout.resolve("test_altgr_shortcuts", "E", { RAlt = true, Shift = true }))
+        assert.are.equal("¢", KeyboardLayout.resolve("test_altgr_shortcuts", "E", { AltGr = true, Shift = true }))
         assert.is_nil(KeyboardLayout.resolve("us", "U", { Ctrl = true }))
         assert.is_nil(KeyboardLayout.resolve("us", "A", { Alt = true }))
         assert.is_nil(KeyboardLayout.resolve("us", "C", { Meta = true }))

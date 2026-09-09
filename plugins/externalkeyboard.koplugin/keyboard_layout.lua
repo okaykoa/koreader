@@ -67,7 +67,7 @@ function M.resolve(layout_name, key_name, modifiers)
         if active then
             if name == "Shift" then
                 level = level + M.SHIFT
-            elseif name == "AltGr" or name == "RAlt" then
+            elseif name == "AltGr" then
                 level = level + M.ALTGR
             else
                 pending_dead_key = nil

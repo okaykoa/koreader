@@ -2,7 +2,7 @@
 -- Derived from xkeyboard-config symbols data.
 -- SPDX-License-Identifier: MIT
 return {
-    [" "] = { " " },
+    [" "] = { " ", " " },
     ["'"] = { { dead = "dead_acute" }, { dead = "dead_diaeresis" }, { dead = "dead_diaeresis" }, "|" },
     [","] = { ",", "<", "•", "×" },
     ["-"] = { "-", "_", "\\", "¿" },
