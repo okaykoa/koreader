@@ -69,8 +69,8 @@ local KEY_NAMES = {
 }
 
 local LEGACY_KEYSYM_CHARACTERS = {
-    Hebrew_nun = "\215\240",
-    hebrew_nun = "\215\240",
+    Hebrew_nun = "\215\160",
+    hebrew_nun = "\215\160",
 }
 
 for number, key in ipairs({ "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" }) do
@@ -110,9 +110,12 @@ local function parse_keysym(name)
 end
 
 local function parse_keysym_value(keysym)
+    if keysym == 0 then return false end
     local name = ffi.new("char[128]")
     if xkbcommon.xkb_keysym_get_name(keysym, name, 128) <= 0 then return nil end
-    return parse_keysym(ffi.string(name))
+    local keysym_name = ffi.string(name)
+    if keysym_name == "VoidSymbol" then return false end
+    return parse_keysym(keysym_name)
 end
 
 local function modifier_mask(keymap, name)
@@ -158,7 +161,7 @@ local function load_layout(symbols_dir, layout, variant)
                             local value = parse_keysym_value(syms[0][0])
                             if value then
                                 levels[output_level] = value
-                            else
+                            elseif value ~= false then
                                 io.stderr:write(("warning: %s(%s) <%s>: unsupported keysym\n"):format(layout, variant, xkb_key))
                             end
                         end
