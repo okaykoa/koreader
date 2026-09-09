@@ -310,11 +310,45 @@ local function available_koreader_layout_variants(symbols_dir)
     return variants
 end
 
+local function available_xkb_layouts(symbols_dir, include_variants)
+    local layouts = {}
+    local rules = read_file(symbols_dir .. "/../rules/evdev.lst")
+    local section
+    for line in rules:gmatch("[^\n]+") do
+        if line == "! layout" then
+            section = "layout"
+        elseif line == "! variant" then
+            section = include_variants and "variant" or nil
+        elseif line:match("^!") then
+            section = nil
+        elseif section == "layout" then
+            local layout = line:match("^%s*([%w_-]+)%s+")
+            if layout then
+                table.insert(layouts, {
+                    language = layout,
+                    layout = layout,
+                    variant = "basic",
+                })
+            end
+        elseif section == "variant" then
+            local variant, layout = line:match("^%s*([%w_-]+)%s+([%w_-]+):")
+            if variant and layout then
+                table.insert(layouts, {
+                    language = layout .. "-" .. variant,
+                    layout = layout,
+                    variant = variant,
+                })
+            end
+        end
+    end
+    return layouts
+end
+
 local function usage()
     io.stderr:write("Usage: tools/xkb_to_lua.lua <layout> [--variant NAME] [--layout-name NAME] [--symbols-dir PATH] [--output PATH]\n")
     io.stderr:write("       tools/xkb_to_lua.lua --common [--symbols-dir PATH] [--output-dir PATH]  # curated common layouts\n")
-    io.stderr:write("       tools/xkb_to_lua.lua --all [--symbols-dir PATH] [--output-dir PATH]  # KOReader physical keyboard layouts\n")
-    io.stderr:write("       tools/xkb_to_lua.lua --all-variants [--symbols-dir PATH] [--output-dir PATH]  # layouts and variants\n")
+    io.stderr:write("       tools/xkb_to_lua.lua --all [--xkb] [--symbols-dir PATH] [--output-dir PATH]  # KOReader or all XKB layouts\n")
+    io.stderr:write("       tools/xkb_to_lua.lua --all-variants [--xkb] [--symbols-dir PATH] [--output-dir PATH]  # KOReader or all XKB layouts and variants\n")
 end
 
 local function parse_arguments()
@@ -331,6 +365,8 @@ local function parse_arguments()
             arguments.common = true
         elseif value == "--all-variants" then
             arguments.all_variants = true
+        elseif value == "--xkb" then
+            arguments.xkb = true
         elseif value == "--variant" or value == "--layout-name" or value == "--symbols-dir" or value == "--output" or value == "--output-dir" then
             index = index + 1
             assert(arg[index], value .. " requires a value")
@@ -342,6 +378,7 @@ local function parse_arguments()
         end
         index = index + 1
     end
+    assert(not (arguments.xkb and not (arguments.all or arguments.all_variants)), "--xkb requires --all or --all-variants")
     assert(arguments.layout or arguments.common or arguments.all or arguments.all_variants, "layout, --common, --all, or --all-variants is required")
     assert(not (arguments.layout and (arguments.common or arguments.all or arguments.all_variants)), "batch export cannot be combined with a layout")
     assert(not ((arguments.common and arguments.all) or (arguments.common and arguments.all_variants) or (arguments.all and arguments.all_variants)), "only one batch export option may be used")
@@ -395,7 +432,8 @@ if arguments.common or arguments.all or arguments.all_variants then
     local output_dir = arguments.output_dir or DEFAULT_OUTPUT_DIR
     local written = 0
     local skipped = 0
-    local layouts = arguments.all_variants and available_koreader_layout_variants(arguments.symbols_dir)
+    local layouts = arguments.xkb and available_xkb_layouts(arguments.symbols_dir, arguments.all_variants)
+        or arguments.all_variants and available_koreader_layout_variants(arguments.symbols_dir)
         or arguments.all and available_koreader_layouts()
         or available_common_layouts()
     for _, layout_info in ipairs(layouts) do
