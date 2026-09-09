@@ -195,23 +195,38 @@ function ExternalKeyboard:addToMainMenu(menu_items)
 end
 
 function ExternalKeyboard:getKeyboardLayoutMenu()
-    local layouts = {}
+    local layouts_by_language = {}
     for filename in lfs.dir(KEYBOARD_LAYOUTS_DIR) do
         local layout = filename:match("^([%w_-]+)%.lua$")
-        if layout then table.insert(layouts, layout) end
+        if layout then
+            local language = layout:match("^([%w_]+)%-") or layout
+            layouts_by_language[language] = layouts_by_language[language] or {}
+            table.insert(layouts_by_language[language], layout)
+        end
     end
-    table.sort(layouts)
 
+    local languages = {}
+    for language in pairs(layouts_by_language) do table.insert(languages, language) end
+    table.sort(languages)
     local items = {}
-    for _, layout in ipairs(layouts) do
+    for __, language in ipairs(languages) do
+        local layouts = layouts_by_language[language]
+        table.sort(layouts)
+        local layout_items = {}
+        for __, layout in ipairs(layouts) do
+            table.insert(layout_items, {
+                text = layout == language and _("Default") or layout:sub(#language + 2),
+                checked_func = function()
+                    return G_reader_settings:readSetting("external_keyboard_layout", "us") == layout
+                end,
+                callback = function()
+                    G_reader_settings:saveSetting("external_keyboard_layout", layout)
+                end,
+            })
+        end
         table.insert(items, {
-            text = layout,
-            checked_func = function()
-                return G_reader_settings:readSetting("external_keyboard_layout", "us") == layout
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("external_keyboard_layout", layout)
-            end,
+            text = language,
+            sub_item_table = layout_items,
         })
     end
     return items
