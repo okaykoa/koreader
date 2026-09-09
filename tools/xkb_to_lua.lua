@@ -173,6 +173,35 @@ local function load_layout(symbols_dir, layout, variant)
     return entries, name
 end
 
+-- XKB layouts shipped with KOReader by default
+local COMMON_XKB_LAYOUTS = {
+    -- Western European
+    { "us", "us", "basic" },
+    { "us-intl", "us", "intl" },
+    { "us-altgr-intl", "us", "altgr-intl" },
+    { "gb", "gb", "basic" },
+    { "be", "be", "basic" },
+    { "br", "br", "abnt2" },
+    { "de", "de", "basic" },
+    { "es", "es", "basic" },
+    { "fr", "fr", "basic" },
+    { "it", "it", "basic" },
+    { "nl", "nl", "basic" },
+    -- Central / Eastern European
+    { "pl", "pl", "basic" },
+    { "cz", "cz", "basic" },
+    { "hu", "hu", "basic" },
+    { "ro", "ro", "basic" },
+    -- Other scripts
+    { "kz", "kz", "basic" },
+    { "ru", "ru", "winkeys" },
+    { "uk", "ua", "unicode" },
+    { "ar", "ara", "basic" },
+    { "el", "gr", "basic" },
+    { "he", "il", "basic" },
+}
+
+-- Language conversion
 local KOREADER_XKB_LAYOUTS = {
     ar = { "ara", "basic" },
     bg_BG = { "bg", "bds" },
@@ -196,32 +225,6 @@ local KOREADER_XKB_LAYOUTS = {
     vi = { "vn", "basic" },
     zh = { "cn", "basic" },
     zh_CN = { "cn", "basic" },
-}
-
-local COMMON_XKB_LAYOUTS = {
-    -- Western European
-    { "us", "us", "basic" },
-    { "us-intl", "us", "intl" },
-    { "us-altgr-intl", "us", "altgr-intl" },
-    { "gb", "gb", "basic" },
-    { "de", "de", "basic" },
-    { "fr", "fr", "basic" },
-    { "es", "es", "basic" },
-    { "it", "it", "basic" },
-    { "nl", "nl", "basic" },
-    { "be", "be", "basic" },
-    { "br", "br", "abnt2" },
-    -- Central / Eastern European
-    { "pl", "pl", "basic" },
-    { "cz", "cz", "basic" },
-    { "hu", "hu", "basic" },
-    { "ro", "ro", "basic" },
-    -- Other scripts
-    { "ru", "ru", "winkeys" },
-    { "uk", "ua", "unicode" },
-    { "el", "gr", "basic" },
-    { "ar", "ara", "basic" },
-    { "he", "il", "basic" },
 }
 
 -- KOReader interface languages that have no virtual keyboard layout, plus
