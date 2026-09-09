@@ -213,9 +213,13 @@ function ExternalKeyboard:getKeyboardLayoutMenu()
         local layouts = layouts_by_language[language]
         table.sort(layouts)
         local layout_items = {}
+        local language_name = language
         for dummy, layout in ipairs(layouts) do
             local loader = loadfile(KEYBOARD_LAYOUTS_DIR .. "/" .. layout .. ".lua")
             local layout_data = loader and loader()
+            if layout == language and layout_data and layout_data.name then
+                language_name = layout_data.name
+            end
             table.insert(layout_items, {
                 text = layout_data and layout_data.name or (layout == language and _("Default") or layout:sub(#language + 2)),
                 checked_func = function()
@@ -227,7 +231,7 @@ function ExternalKeyboard:getKeyboardLayoutMenu()
             })
         end
         table.insert(items, {
-            text = language,
+            text = language_name,
             sub_item_table = layout_items,
         })
     end
