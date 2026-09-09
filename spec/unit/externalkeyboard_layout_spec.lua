@@ -43,6 +43,22 @@ describe("ExternalKeyboard layout resolver (us)", function()
         assert.is_nil(KeyboardLayout.resolve("us", "1", { Shift = true, AltGr = true }))
     end)
 
+    it("composes generated dead keys", function()
+        KeyboardLayout.layouts.test_dead = {
+            ["'"] = { { dead = "dead_acute" } },
+            ["^"] = { { dead = "dead_circumflex" } },
+            ["E"] = { "e", "E" },
+            ["X"] = { "x", "X" },
+            [" "] = { " " },
+        }
+        assert.is_nil(KeyboardLayout.resolve("test_dead", "'"))
+        assert.are.equal("é", KeyboardLayout.resolve("test_dead", "E"))
+        assert.is_nil(KeyboardLayout.resolve("test_dead", "'"))
+        assert.are.equal("\194\180", KeyboardLayout.resolve("test_dead", " "))
+        assert.is_nil(KeyboardLayout.resolve("test_dead", "^"))
+        assert.are.equal("x\204\130", KeyboardLayout.resolve("test_dead", "X"))
+    end)
+
     it("returns nil for keys it does not handle", function()
         assert.is_nil(r("F1"))
         assert.is_nil(r("Home"))

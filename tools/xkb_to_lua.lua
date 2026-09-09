@@ -5,7 +5,7 @@ Export a simple XKB symbols layout as a KOReader Lua layout table.
 
 Supports the common simple-layout subset: xkb_symbols sections, includes, and
 key definitions with up to four symbol levels. It does not implement XKB
-types, groups, actions, dead keys, or compose processing.
+types, groups, or actions. Dead keys are preserved for runtime composition.
 
 Examples:
     tools/xkb_to_lua.lua us
@@ -93,6 +93,7 @@ end
 
 local function parse_keysym(name)
     if #name == 1 then return name end
+    if name:match("^dead_[%w_]+$") then return { dead = name } end
     local keysym = xkbcommon.xkb_keysym_from_name(name, 0)
     if keysym == 0 then return nil end
     local buffer = ffi.new("char[7]")
@@ -183,7 +184,8 @@ local function render_layout(entries, layout, variant)
         end
         for index = 1, last_level do
             local value = levels[LEVEL_MASKS[index]]
-            table.insert(rendered_levels, value and lua_string(value) or "nil")
+            local rendered_value = type(value) == "table" and ("{ dead = %s }"):format(lua_string(value.dead)) or value and lua_string(value)
+            table.insert(rendered_levels, rendered_value or "nil")
         end
         table.insert(lines, ("    [%s] = { %s },\n"):format(lua_string(key), table.concat(rendered_levels, ", ")))
     end
