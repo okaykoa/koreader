@@ -167,6 +167,29 @@ local KOREADER_XKB_LAYOUTS = {
     zh_CN = { "cn", "basic" },
 }
 
+-- KOReader interface languages that have no virtual keyboard layout, plus
+-- commonly used national layouts for the same language.
+local KOREADER_EXTRA_XKB_LAYOUTS = {
+    { "ca", "es", "cat" },
+    { "en_GB", "gb", "basic" },
+    { "eo", "epo", "basic" },
+    { "eu", "es", "basic" },
+    { "fi", "fi", "kotoistus" },
+    { "ga", "ie", "basic" },
+    { "gl", "es", "basic" },
+    { "hr", "hr", "basic" },
+    { "id", "id", "basic" },
+    { "it_IT", "it", "basic" },
+    { "lt_LT", "lt", "basic" },
+    { "lv", "lv", "basic" },
+    { "nl_NL", "nl", "basic" },
+    { "nl_NL-be", "be", "basic" },
+    { "pt_PT", "pt", "basic" },
+    { "ro_MD", "md", "basic" },
+    { "sl", "si", "basic" },
+    { "zh_TW", "tw", "tw" },
+}
+
 local function available_koreader_layouts()
     local virtual_keyboard = read_file("frontend/ui/widget/virtualkeyboard.lua")
     local map = virtual_keyboard:match("lang_to_keyboard_layout%s*=%s*{(.-)\n    },")
@@ -178,6 +201,13 @@ local function available_koreader_layouts()
             language = language,
             layout = xkb_layout and xkb_layout[1] or language:match("^[^_]+"),
             variant = xkb_layout and xkb_layout[2] or "basic",
+        })
+    end
+    for _, layout_info in ipairs(KOREADER_EXTRA_XKB_LAYOUTS) do
+        table.insert(layouts, {
+            language = layout_info[1],
+            layout = layout_info[2],
+            variant = layout_info[3],
         })
     end
     table.sort(layouts, function(left, right) return left.language < right.language end)
@@ -216,7 +246,7 @@ end
 
 local function usage()
     io.stderr:write("Usage: tools/xkb_to_lua.lua <layout> [--variant NAME] [--layout-name NAME] [--symbols-dir PATH] [--output PATH]\n")
-    io.stderr:write("       tools/xkb_to_lua.lua --all [--symbols-dir PATH] [--output-dir PATH]  # KOReader virtual keyboard layouts\n")
+    io.stderr:write("       tools/xkb_to_lua.lua --all [--symbols-dir PATH] [--output-dir PATH]  # KOReader physical keyboard layouts\n")
     io.stderr:write("       tools/xkb_to_lua.lua --all-variants [--symbols-dir PATH] [--output-dir PATH]  # layouts and variants\n")
 end
 
