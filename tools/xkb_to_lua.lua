@@ -11,6 +11,7 @@ Examples:
     tools/xkb_to_lua.lua us
     tools/xkb_to_lua.lua de > /tmp/de.lua
     tools/xkb_to_lua.lua --all
+    tools/xkb_to_lua.lua --all-variants
 ]]--
 
 local DEFAULT_SYMBOLS_DIR = "/usr/share/X11/xkb/symbols"
@@ -183,9 +184,40 @@ local function available_koreader_layouts()
     return layouts
 end
 
+local function available_koreader_layout_variants(symbols_dir)
+    local layouts = available_koreader_layouts()
+    local variants = {}
+    local rules = read_file(symbols_dir .. "/../rules/evdev.lst")
+    local in_variant_section = false
+    for line in rules:gmatch("[^\n]+") do
+        if line == "! variant" then
+            in_variant_section = true
+        elseif line:match("^!") then
+            if in_variant_section then break end
+        elseif in_variant_section then
+            local variant, xkb_layout = line:match("^%s*([%w_-]+)%s+([%w_-]+):")
+            if variant and xkb_layout then
+                for _, layout_info in ipairs(layouts) do
+                    if layout_info.layout == xkb_layout and layout_info.variant ~= variant then
+                        table.insert(variants, {
+                            language = layout_info.language .. "-" .. variant,
+                            layout = xkb_layout,
+                            variant = variant,
+                        })
+                    end
+                end
+            end
+        end
+    end
+    for _, layout_info in ipairs(layouts) do table.insert(variants, layout_info) end
+    table.sort(variants, function(left, right) return left.language < right.language end)
+    return variants
+end
+
 local function usage()
     io.stderr:write("Usage: tools/xkb_to_lua.lua <layout> [--variant NAME] [--layout-name NAME] [--symbols-dir PATH] [--output PATH]\n")
     io.stderr:write("       tools/xkb_to_lua.lua --all [--symbols-dir PATH] [--output-dir PATH]  # KOReader virtual keyboard layouts\n")
+    io.stderr:write("       tools/xkb_to_lua.lua --all-variants [--symbols-dir PATH] [--output-dir PATH]  # layouts and variants\n")
 end
 
 local function parse_arguments()
@@ -198,6 +230,8 @@ local function parse_arguments()
             os.exit(0)
         elseif value == "--all" then
             arguments.all = true
+        elseif value == "--all-variants" then
+            arguments.all_variants = true
         elseif value == "--variant" or value == "--layout-name" or value == "--symbols-dir" or value == "--output" or value == "--output-dir" then
             index = index + 1
             assert(arg[index], value .. " requires a value")
@@ -209,9 +243,10 @@ local function parse_arguments()
         end
         index = index + 1
     end
-    assert(arguments.layout or arguments.all, "layout or --all is required")
-    assert(not (arguments.layout and arguments.all), "--all cannot be combined with a layout")
-    assert(not (arguments.all and (arguments.variant ~= "basic" or arguments.layout_name or arguments.output)), "--all only supports --symbols-dir and --output-dir")
+    assert(arguments.layout or arguments.all or arguments.all_variants, "layout, --all, or --all-variants is required")
+    assert(not (arguments.layout and (arguments.all or arguments.all_variants)), "batch export cannot be combined with a layout")
+    assert(not (arguments.all and arguments.all_variants), "--all and --all-variants cannot be combined")
+    assert(not ((arguments.all or arguments.all_variants) and (arguments.variant ~= "basic" or arguments.layout_name or arguments.output)), "batch export only supports --symbols-dir and --output-dir")
     return arguments
 end
 
@@ -251,11 +286,12 @@ local function write_layout(path, output)
 end
 
 local arguments = parse_arguments()
-if arguments.all then
+if arguments.all or arguments.all_variants then
     local output_dir = arguments.output_dir or DEFAULT_OUTPUT_DIR
     local written = 0
     local skipped = 0
-    for _, layout_info in ipairs(available_koreader_layouts()) do
+    local layouts = arguments.all_variants and available_koreader_layout_variants(arguments.symbols_dir) or available_koreader_layouts()
+    for _, layout_info in ipairs(layouts) do
         local success, entries = pcall(load_section, arguments.symbols_dir, layout_info.layout, layout_info.variant, {})
         if success and next(entries) then
             entries[" "] = entries[" "] or { [0] = " ", [SHIFT] = " " }
