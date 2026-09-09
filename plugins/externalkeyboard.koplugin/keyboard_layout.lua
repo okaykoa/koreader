@@ -1,14 +1,4 @@
---[[
-Physical-keyboard layout resolver for the External keyboard plugin.
-
-Maps a (key name, modifier state) to the composed UTF-8 character, or nil for
-keys this layout does not produce a character for (the caller then emits no
-TextInput event and the key falls through to normal KeyPress handling).
-
-Letters are case-folded; only non-letter keys live in the per-layout tables.
-Scope: US QWERTY, base + Shift. Structured so more layouts and an AltGr level
-are drop-in additions later.
---]]
+-- US QWERTY physical-keyboard resolver (base and Shift levels).
 
 local M = {}
 
@@ -39,21 +29,15 @@ M.layouts = {
     },
 }
 
--- key_name: the KOReader key name. Letters arrive upper-case (e.g. "A"); symbols
--- and space arrive as their base char (e.g. ";", " ") from the event map.
--- modifiers: the Input.modifiers table (only .Shift is consulted at this scope).
 function M.resolve(layout_name, key_name, modifiers)
     if type(key_name) ~= "string" then return nil end
     modifiers = modifiers or {}
-    -- No composed character while a non-Shift modifier is held (Ctrl/Alt/Meta/
-    -- Sym/...): those are shortcuts, not text. SDL likewise emits no TextInput
-    -- for control combinations, so this path must not either.
+    -- Non-Shift modifiers are shortcuts, not text.
     for name, active in pairs(modifiers) do
         if active and name ~= "Shift" then return nil end
     end
     local shift = modifiers.Shift or false
 
-    -- Single A-Z letter: case-fold.
     if key_name:match("^[A-Z]$") then
         return shift and key_name or key_name:lower()
     end

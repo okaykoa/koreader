@@ -376,12 +376,10 @@ function Device:init()
     end
 end
 
--- True when the active input layer delivers composed text via TextInput events
--- for physical key presses: SDL always does; an external keyboard does while a
--- layout resolver is installed on Input. InputText uses this to defer printable
--- insertion to onTextInput instead of guessing the glyph from the key name.
+-- True if the active input layer emits TextInput events for physical keys.
+-- InputText then defers insertion to onTextInput instead of using the key name.
 function Device:hasKeyboardTextInput()
-    return self:isSDL() or (self.input ~= nil and self.input.hw_text_layout ~= nil)
+    return self.input.hw_text_layout ~= nil
 end
 
 function Device:setScreenDPI(dpi_override)
