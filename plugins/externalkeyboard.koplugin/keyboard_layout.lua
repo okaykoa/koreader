@@ -5,9 +5,16 @@ local M = {}
 M.SHIFT = 1
 M.ALTGR = 2
 
-M.layouts = {
-    us = dofile("plugins/externalkeyboard.koplugin/keyboard_layouts/us.lua"),
-}
+M.layouts = setmetatable({}, {
+    __index = function(layouts, layout_name)
+        if type(layout_name) ~= "string" or not layout_name:match("^[%w_-]+$") then return nil end
+        local loader = loadfile("plugins/externalkeyboard.koplugin/keyboard_layouts/" .. layout_name .. ".lua")
+        if not loader then return nil end
+        local layout = loader()
+        rawset(layouts, layout_name, layout)
+        return layout
+    end,
+})
 
 function M.resolve(layout_name, key_name, modifiers)
     if type(key_name) ~= "string" then return nil end
