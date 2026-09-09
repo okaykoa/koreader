@@ -214,8 +214,10 @@ function ExternalKeyboard:getKeyboardLayoutMenu()
         table.sort(layouts)
         local layout_items = {}
         for dummy, layout in ipairs(layouts) do
+            local loader = loadfile(KEYBOARD_LAYOUTS_DIR .. "/" .. layout .. ".lua")
+            local layout_data = loader and loader()
             table.insert(layout_items, {
-                text = layout == language and _("Default") or layout:sub(#language + 2),
+                text = layout_data and layout_data.name or (layout == language and _("Default") or layout:sub(#language + 2)),
                 checked_func = function()
                     return G_reader_settings:readSetting("external_keyboard_layout", "us") == layout
                 end,
