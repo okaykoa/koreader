@@ -44,6 +44,7 @@ local OTG_CHIPIDEA_ROLE_PATH = "/sys/kernel/debug/ci_hdrc.0/role"
 -- It does not require debugfs, but the point is moot as debugfs is mounted by default on those,
 -- as Nickel relies on it for PM interaction with the display driver.
 local OTG_SUNXI_ROLE_PATH = "/sys/devices/platform/soc/usbc0/otg_role"
+local KEYBOARD_LAYOUTS_DIR = "plugins/externalkeyboard.koplugin/keyboard_layouts"
 -- NOTE: See https://www.mobileread.com/forums/showthread.php?p=4135724 if your keyboard reports itself as an Apple keyboard.
 --       (We currently don't do this here, but that may change in the future).
 
@@ -173,6 +174,13 @@ function ExternalKeyboard:addToMainMenu(menu_items)
     end
 
     table.insert(sub_items, {
+        text = _("Keyboard layout"),
+        sub_item_table_func = function()
+            return self:getKeyboardLayoutMenu()
+        end,
+    })
+
+    table.insert(sub_items, {
         text = _("Help"),
         keep_menu_open = true,
         callback = function()
@@ -184,6 +192,29 @@ function ExternalKeyboard:addToMainMenu(menu_items)
         text = _("External Keyboard"),
         sub_item_table = sub_items,
     }
+end
+
+function ExternalKeyboard:getKeyboardLayoutMenu()
+    local layouts = {}
+    for filename in lfs.dir(KEYBOARD_LAYOUTS_DIR) do
+        local layout = filename:match("^([%w_-]+)%.lua$")
+        if layout then table.insert(layouts, layout) end
+    end
+    table.sort(layouts)
+
+    local items = {}
+    for _, layout in ipairs(layouts) do
+        table.insert(items, {
+            text = layout,
+            checked_func = function()
+                return G_reader_settings:readSetting("external_keyboard_layout", "us") == layout
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("external_keyboard_layout", layout)
+            end,
+        })
+    end
+    return items
 end
 
 function ExternalKeyboard:chipideaGetOTGRole()
@@ -426,7 +457,7 @@ function ExternalKeyboard:setupKeyboard(data)
     Device.input.event_map = event_map
     local KeyboardLayout = dofile("plugins/externalkeyboard.koplugin/keyboard_layout.lua")
     Device.input.hw_text_layout = function(key_name, modifiers)
-        return KeyboardLayout.resolve("us", key_name, modifiers)
+        return KeyboardLayout.resolve(G_reader_settings:readSetting("external_keyboard_layout", "us"), key_name, modifiers)
     end
     Device.hasKeyboard = yes
     Device.hasKeys = yes
