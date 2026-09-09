@@ -109,7 +109,7 @@ local function section_body(text, variant, source)
 end
 
 local function parse_include(include)
-    local layout, variant = include:match("^([%w%./+%-]+)%(([%w+%-]+)%)$")
+    local layout, variant = include:match("^([%w%./+%-]+)%(([%w_%-]+)%)$")
     if not layout then
         layout = include:match("^[%w%./+%-]+$")
     end
@@ -120,7 +120,8 @@ end
 local function parse_keysym(name)
     if #name == 1 then return name end
     if KEYSYMS[name] then return KEYSYMS[name] end
-    local codepoint = tonumber(name:match("^U([%x]+)$"), 16)
+    local hexadecimal = name:match("^U([%x]+)$")
+    local codepoint = hexadecimal and tonumber(hexadecimal, 16)
     return codepoint and utf8_char(codepoint) or nil
 end
 
