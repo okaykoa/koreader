@@ -38,6 +38,11 @@ describe("ExternalKeyboard layout resolver (us)", function()
         assert.are.equal(" ", r(" ", true))
     end)
 
+    it("uses an AltGr level when a layout defines one", function()
+        assert.is_nil(KeyboardLayout.resolve("us", "1", { AltGr = true }))
+        assert.is_nil(KeyboardLayout.resolve("us", "1", { Shift = true, AltGr = true }))
+    end)
+
     it("returns nil for keys it does not handle", function()
         assert.is_nil(r("F1"))
         assert.is_nil(r("Home"))

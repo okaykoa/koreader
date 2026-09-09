@@ -1,52 +1,62 @@
--- US QWERTY physical-keyboard resolver (base and Shift levels).
+-- US QWERTY physical-keyboard resolver.
 
 local M = {}
 
+M.SHIFT = 1
+M.ALTGR = 2
+
 M.layouts = {
     us = {
-        ["1"] = { base = "1", shift = "!" },
-        ["2"] = { base = "2", shift = "@" },
-        ["3"] = { base = "3", shift = "#" },
-        ["4"] = { base = "4", shift = "$" },
-        ["5"] = { base = "5", shift = "%" },
-        ["6"] = { base = "6", shift = "^" },
-        ["7"] = { base = "7", shift = "&" },
-        ["8"] = { base = "8", shift = "*" },
-        ["9"] = { base = "9", shift = "(" },
-        ["0"] = { base = "0", shift = ")" },
-        ["-"] = { base = "-", shift = "_" },
-        ["="] = { base = "=", shift = "+" },
-        ["["] = { base = "[", shift = "{" },
-        ["]"] = { base = "]", shift = "}" },
-        ["\\"] = { base = "\\", shift = "|" },
-        [";"] = { base = ";", shift = ":" },
-        ["'"] = { base = "'", shift = '"' },
-        ["`"] = { base = "`", shift = "~" },
-        [","] = { base = ",", shift = "<" },
-        ["."] = { base = ".", shift = ">" },
-        ["/"] = { base = "/", shift = "?" },
-        [" "] = { base = " ", shift = " " },
+        ["1"] = { [0] = "1", [M.SHIFT] = "!" },
+        ["2"] = { [0] = "2", [M.SHIFT] = "@" },
+        ["3"] = { [0] = "3", [M.SHIFT] = "#" },
+        ["4"] = { [0] = "4", [M.SHIFT] = "$" },
+        ["5"] = { [0] = "5", [M.SHIFT] = "%" },
+        ["6"] = { [0] = "6", [M.SHIFT] = "^" },
+        ["7"] = { [0] = "7", [M.SHIFT] = "&" },
+        ["8"] = { [0] = "8", [M.SHIFT] = "*" },
+        ["9"] = { [0] = "9", [M.SHIFT] = "(" },
+        ["0"] = { [0] = "0", [M.SHIFT] = ")" },
+        ["-"] = { [0] = "-", [M.SHIFT] = "_" },
+        ["="] = { [0] = "=", [M.SHIFT] = "+" },
+        ["["] = { [0] = "[", [M.SHIFT] = "{" },
+        ["]"] = { [0] = "]", [M.SHIFT] = "}" },
+        ["\\"] = { [0] = "\\", [M.SHIFT] = "|" },
+        [";"] = { [0] = ";", [M.SHIFT] = ":" },
+        ["'"] = { [0] = "'", [M.SHIFT] = '"' },
+        ["`"] = { [0] = "`", [M.SHIFT] = "~" },
+        [","] = { [0] = ",", [M.SHIFT] = "<" },
+        ["."] = { [0] = ".", [M.SHIFT] = ">" },
+        ["/"] = { [0] = "/", [M.SHIFT] = "?" },
+        [" "] = { [0] = " ", [M.SHIFT] = " " },
     },
 }
 
 function M.resolve(layout_name, key_name, modifiers)
     if type(key_name) ~= "string" then return nil end
     modifiers = modifiers or {}
-    -- Non-Shift modifiers are shortcuts, not text.
+    local level = 0
     for name, active in pairs(modifiers) do
-        if active and name ~= "Shift" then return nil end
+        if active then
+            if name == "Shift" then
+                level = level + M.SHIFT
+            elseif name == "AltGr" then
+                level = level + M.ALTGR
+            else
+                return nil
+            end
+        end
     end
-    local shift = modifiers.Shift or false
 
     if key_name:match("^[A-Z]$") then
-        return shift and key_name or key_name:lower()
+        return level == M.SHIFT and key_name or (level == 0 and key_name:lower() or nil)
     end
 
     local layout = M.layouts[layout_name]
     if not layout then return nil end
     local entry = layout[key_name]
     if not entry then return nil end
-    return shift and entry.shift or entry.base
+    return entry[level]
 end
 
 return M
