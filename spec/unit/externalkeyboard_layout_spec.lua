@@ -85,7 +85,12 @@ describe("ExternalKeyboard layout resolver (us)", function()
         assert.is_nil(KeyboardLayout.resolve("dvorak", "1", { Shift = true }))
     end)
 
-    it("returns nil while a non-Shift modifier is held", function()
+    it("returns nil while a shortcut modifier is held", function()
+        KeyboardLayout.layouts.test_altgr_shortcuts = {
+            ["E"] = { "e", "E", "€", "¢" },
+        }
+        assert.are.equal("€", KeyboardLayout.resolve("test_altgr_shortcuts", "E", { AltGr = true }))
+        assert.are.equal("¢", KeyboardLayout.resolve("test_altgr_shortcuts", "E", { RAlt = true, Shift = true }))
         assert.is_nil(KeyboardLayout.resolve("us", "U", { Ctrl = true }))
         assert.is_nil(KeyboardLayout.resolve("us", "A", { Alt = true }))
         assert.is_nil(KeyboardLayout.resolve("us", "C", { Meta = true }))

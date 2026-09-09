@@ -336,6 +336,12 @@ local function write_layout(path, output)
     file:close()
 end
 
+local function add_space_entry(entries)
+    entries[" "] = entries[" "] or {}
+    entries[" "][0] = entries[" "][0] or " "
+    entries[" "][SHIFT] = entries[" "][SHIFT] or " "
+end
+
 local arguments = parse_arguments()
 if arguments.all or arguments.all_variants then
     local output_dir = arguments.output_dir or DEFAULT_OUTPUT_DIR
@@ -345,7 +351,7 @@ if arguments.all or arguments.all_variants then
     for _, layout_info in ipairs(layouts) do
         local success, entries = pcall(load_layout, arguments.symbols_dir, layout_info.layout, layout_info.variant)
         if success and next(entries) then
-            entries[" "] = entries[" "] or { [0] = " ", [SHIFT] = " " }
+            add_space_entry(entries)
             write_layout(output_dir .. "/" .. layout_info.language .. ".lua", render_layout(entries, layout_info.layout, layout_info.variant))
             written = written + 1
         else
@@ -356,7 +362,7 @@ if arguments.all or arguments.all_variants then
     io.write(("Wrote %d layouts to %s (%d skipped)\n"):format(written, output_dir, skipped))
 else
     local entries = load_layout(arguments.symbols_dir, arguments.layout, arguments.variant)
-    entries[" "] = entries[" "] or { [0] = " ", [SHIFT] = " " }
+    add_space_entry(entries)
     local output = render_layout(entries, arguments.layout, arguments.variant)
     local is_terminal = ffi.C.isatty(1) ~= 0
     local output_path = arguments.output
