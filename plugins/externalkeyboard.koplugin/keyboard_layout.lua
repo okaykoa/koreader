@@ -28,7 +28,7 @@ function M.resolve(layout_name, key_name, modifiers)
     local layout = M.layouts[layout_name]
     if not layout then return nil end
     local entry = layout[key_name]
-    if entry then return entry[level] end
+    if entry then return entry[level + 1] end
 
     if key_name:match("^[A-Z]$") then
         return level == M.SHIFT and key_name or (level == 0 and key_name:lower() or nil)
