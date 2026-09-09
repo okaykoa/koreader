@@ -21,7 +21,12 @@ local ffi = require("ffi")
 
 ffi.cdef[[
 int isatty(int fd);
+typedef uint32_t xkb_keysym_t;
+xkb_keysym_t xkb_keysym_from_name(const char *name, int flags);
+int xkb_keysym_to_utf8(xkb_keysym_t keysym, char *buffer, size_t size);
 ]]
+
+local xkbcommon = ffi.load("xkbcommon")
 
 -- XKB physical names used by a standard evdev full-size keyboard, mapped to
 -- the names produced by externalkeyboard.koplugin/event_map_keyboard.lua.
@@ -46,39 +51,8 @@ for number, key in ipairs({ "Z", "X", "C", "V", "B", "N", "M" }) do
     KEY_NAMES[("AB%02d"):format(number)] = key
 end
 
-local KEYSYMS = {
-    space = " ", exclam = "!", quotedbl = '"', numbersign = "#",
-    dollar = "$", percent = "%", ampersand = "&", apostrophe = "'",
-    parenleft = "(", parenright = ")", asterisk = "*", plus = "+",
-    comma = ",", minus = "-", period = ".", slash = "/",
-    colon = ":", semicolon = ";", less = "<", equal = "=", greater = ">",
-    question = "?", at = "@", bracketleft = "[", backslash = "\\",
-    bracketright = "]", asciicircum = "^", underscore = "_", grave = "`",
-    braceleft = "{", bar = "|", braceright = "}", asciitilde = "~",
-    nobreakspace = "\194\160", exclamdown = "\194\161", cent = "\194\162",
-    sterling = "\194\163", currency = "\194\164", yen = "\194\165", section = "\194\167",
-    diaeresis = "\194\168", copyright = "\194\169", registered = "\194\174",
-    degree = "\194\176", plusminus = "\194\177", paragraph = "\194\182",
-    periodcentered = "\194\183", multiply = "\195\151", division = "\195\183",
-    EuroSign = "\226\130\172", guillemotleft = "\194\171", guillemotright = "\194\187",
-    leftsinglequotemark = "\226\128\152", rightsinglequotemark = "\226\128\153",
-    leftdoublequotemark = "\226\128\156", rightdoublequotemark = "\226\128\157",
-}
-
 local function lua_string(value)
     return '"' .. value:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
-end
-
-local function utf8_char(codepoint)
-    if codepoint <= 0x7f then
-        return string.char(codepoint)
-    elseif codepoint <= 0x7ff then
-        return string.char(0xc0 + math.floor(codepoint / 0x40), 0x80 + codepoint % 0x40)
-    elseif codepoint <= 0xffff then
-        return string.char(0xe0 + math.floor(codepoint / 0x1000), 0x80 + math.floor(codepoint / 0x40) % 0x40, 0x80 + codepoint % 0x40)
-    elseif codepoint <= 0x10ffff then
-        return string.char(0xf0 + math.floor(codepoint / 0x40000), 0x80 + math.floor(codepoint / 0x1000) % 0x40, 0x80 + math.floor(codepoint / 0x40) % 0x40, 0x80 + codepoint % 0x40)
-    end
 end
 
 local function read_file(path)
@@ -119,10 +93,11 @@ end
 
 local function parse_keysym(name)
     if #name == 1 then return name end
-    if KEYSYMS[name] then return KEYSYMS[name] end
-    local hexadecimal = name:match("^U([%x]+)$")
-    local codepoint = hexadecimal and tonumber(hexadecimal, 16)
-    return codepoint and utf8_char(codepoint) or nil
+    local keysym = xkbcommon.xkb_keysym_from_name(name, 0)
+    if keysym == 0 then return nil end
+    local buffer = ffi.new("char[7]")
+    local length = xkbcommon.xkb_keysym_to_utf8(keysym, buffer, 7)
+    return length > 0 and ffi.string(buffer, length - 1) or nil
 end
 
 local function load_section(symbols_dir, layout, variant, seen)
