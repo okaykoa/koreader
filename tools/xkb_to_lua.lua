@@ -191,6 +191,7 @@ local KOREADER_XKB_LAYOUTS = {
 
 local COMMON_XKB_LAYOUTS = {
     { "us", "us", "basic" },
+    { "us-intl", "us", "intl" },
     { "us-altgr-intl", "us", "altgr-intl" },
     { "gb", "gb", "basic" },
     { "de", "de", "basic" },
