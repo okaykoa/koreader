@@ -929,7 +929,8 @@ function InputText:onKeyPress(key)
         end
         local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
         if not is_alternative_key and Device:hasKeyboardTextInput() then
-            -- The device inserts text via TextInput.
+            -- The device already inserts text via TextInput.
+            -- Stop event propagate to FocusManager
             return true
         end
         -- if it is single text char, insert it
