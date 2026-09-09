@@ -19,6 +19,7 @@ return {
     ["8"] = { "8", "*", { dead = "dead_ogonek" }, { dead = "dead_horn" } },
     ["9"] = { "9", "(", { dead = "dead_cedilla" }, { dead = "dead_hook" } },
     [";"] = { "n", "N", "ŋ", "Ŋ" },
+    ["<"] = { ";", ":", "̱", "̭" },
     ["="] = { "]", "}", "º", { dead = "dead_abovering" } },
     ["A"] = { "i", "I", "ı", "İ" },
     ["B"] = { "k", "K", "»", "›" },

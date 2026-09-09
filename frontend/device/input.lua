@@ -172,6 +172,7 @@ local Input = {
     -- keyboard state:
     modifiers = {
         Alt = false,
+        AltGr = false,
         Ctrl = false,
         Shift = false,
         Sym = false,

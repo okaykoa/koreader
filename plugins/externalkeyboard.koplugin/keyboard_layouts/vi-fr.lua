@@ -2,9 +2,9 @@
 -- Derived from xkeyboard-config symbols data.
 -- SPDX-License-Identifier: MIT
 return {
-    [" "] = { " ", " " },
+    [" "] = { " " },
     ["'"] = { "ù", "%", { dead = "dead_circumflex" }, { dead = "dead_caron" } },
-    [","] = { { dead = "dead_belowdot" }, ".", ";" },
+    [","] = { { dead = "dead_belowdot" }, ".", ";", "×" },
     ["-"] = { ")", "°", "]", "¿" },
     ["."] = { ":", "/", "·", "÷" },
     ["/"] = { "!", "§", { dead = "dead_belowdot" }, { dead = "dead_abovedot" } },
@@ -19,6 +19,7 @@ return {
     ["8"] = { "_", "8", "\\", "™" },
     ["9"] = { "ç", "9", "^", "±" },
     [";"] = { "m", "M", "µ", "º" },
+    ["<"] = { "<", ">", "|", "¦" },
     ["="] = { "=", "+", "}", { dead = "dead_ogonek" } },
     ["A"] = { "q", "Q", "@", "Ω" },
     ["B"] = { "b", "B", "“", "‘" },
@@ -32,7 +33,7 @@ return {
     ["J"] = { "j", "J", { dead = "dead_hook" }, { dead = "dead_horn" } },
     ["K"] = { "k", "K", "ĸ", "&" },
     ["L"] = { "l", "L", "ł", "Ł" },
-    ["M"] = { { dead = "dead_hook" }, "?", "," },
+    ["M"] = { { dead = "dead_hook" }, "?", ",", { dead = "dead_doubleacute" } },
     ["N"] = { "n", "N", "”", "’" },
     ["O"] = { "o", "O", "ơ", "Ơ" },
     ["P"] = { "p", "P", "þ", "Þ" },

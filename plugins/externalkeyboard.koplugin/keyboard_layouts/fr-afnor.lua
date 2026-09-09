@@ -19,6 +19,7 @@ return {
     ["8"] = { "’", "8", "_", "—" },
     ["9"] = { "«", "9", "“", "‹" },
     [";"] = { "m", "M", "∞" },
+    ["<"] = { "<", ">", "≤", "≥" },
     ["="] = { { dead = "dead_circumflex" }, { dead = "dead_diaeresis" }, { dead = "dead_caron" } },
     ["A"] = { "q", "Q", "θ" },
     ["B"] = { "b", "B", { dead = "dead_stroke" } },

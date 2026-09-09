@@ -2,7 +2,7 @@
 -- Derived from xkeyboard-config symbols data.
 -- SPDX-License-Identifier: MIT
 return {
-    [" "] = { " ", " " },
+    [" "] = { " " },
     ["'"] = { "'", "@", { dead = "dead_acute" }, "`" },
     [","] = { ",", "<", "•", "×" },
     ["-"] = { "-", "_", "\\", "¿" },
@@ -14,11 +14,12 @@ return {
     ["3"] = { "3", "£", "³", "⅓" },
     ["4"] = { "4", "$", "€", "¼" },
     ["5"] = { "5", "%", "½", "⅜" },
-    ["6"] = { "6", "^", { dead = "dead_circumflex" } },
+    ["6"] = { "6", "^", { dead = "dead_circumflex" }, "⅝" },
     ["7"] = { "7", "&", "{", "⅞" },
     ["8"] = { "8", "*", "[", "™" },
     ["9"] = { "9", "(", "]", "±" },
     [";"] = { ";", ":", { dead = "dead_acute" }, { dead = "dead_doubleacute" } },
+    ["<"] = { "\\", "|", "|", "¦" },
     ["="] = { "=", "+", { dead = "dead_cedilla" }, { dead = "dead_ogonek" } },
     ["A"] = { "a", "A", "á", "Á" },
     ["B"] = { "b", "B", "“", "‘" },
@@ -48,6 +49,6 @@ return {
     ["Z"] = { "z", "Z", "«", "<" },
     ["["] = { "[", "{", { dead = "dead_diaeresis" }, { dead = "dead_abovering" } },
     ["\\"] = { "#", "~", { dead = "dead_tilde" }, "\\" },
-    ["]"] = { "]", "}", nil, "|" },
-    ["`"] = { { dead = "dead_grave" }, "¬", "¦" },
+    ["]"] = { "]", "}", { dead = "dead_tilde" }, "|" },
+    ["`"] = { { dead = "dead_grave" }, "¬", "¦", "¬" },
 }

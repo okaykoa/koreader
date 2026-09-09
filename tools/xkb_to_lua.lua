@@ -1,11 +1,12 @@
 #!/usr/bin/env luajit
 
 --[[
-Export a simple XKB symbols layout as a KOReader Lua layout table.
+Export an XKB layout as a KOReader Lua layout table.
 
-Supports the common simple-layout subset: xkb_symbols sections, includes, and
-key definitions with up to four symbol levels. It does not implement XKB
-types, groups, or actions. Dead keys are preserved for runtime composition.
+Compiles the selected XKB rules, model, layout, and variant with
+libxkbcommon, then exports text available with no modifier, Shift, AltGr, or
+Shift+AltGr. It does not export layout groups or XKB actions. Dead keys are
+preserved for runtime composition.
 
 Examples:
     tools/xkb_to_lua.lua us
@@ -24,6 +25,30 @@ local ffi = require("ffi")
 ffi.cdef[[
 int isatty(int fd);
 typedef uint32_t xkb_keysym_t;
+typedef uint32_t xkb_keycode_t;
+typedef uint32_t xkb_level_index_t;
+typedef uint32_t xkb_mod_index_t;
+typedef uint32_t xkb_mod_mask_t;
+struct xkb_context;
+struct xkb_keymap;
+struct xkb_rule_names {
+    const char *rules;
+    const char *model;
+    const char *layout;
+    const char *variant;
+    const char *options;
+};
+struct xkb_context *xkb_context_new(int flags);
+void xkb_context_unref(struct xkb_context *context);
+int xkb_context_include_path_append(struct xkb_context *context, const char *path);
+struct xkb_keymap *xkb_keymap_new_from_names(struct xkb_context *context, const struct xkb_rule_names *names, int flags);
+void xkb_keymap_unref(struct xkb_keymap *keymap);
+xkb_keycode_t xkb_keymap_key_by_name(struct xkb_keymap *keymap, const char *name);
+xkb_level_index_t xkb_keymap_num_levels_for_key(struct xkb_keymap *keymap, xkb_keycode_t key, uint32_t layout);
+size_t xkb_keymap_key_get_mods_for_level(struct xkb_keymap *keymap, xkb_keycode_t key, uint32_t layout, xkb_level_index_t level, xkb_mod_mask_t *masks_out, size_t masks_size);
+int xkb_keymap_key_get_syms_by_level(struct xkb_keymap *keymap, xkb_keycode_t key, uint32_t layout, xkb_level_index_t level, const xkb_keysym_t **syms_out);
+xkb_mod_index_t xkb_keymap_mod_get_index(struct xkb_keymap *keymap, const char *name);
+int xkb_keysym_get_name(xkb_keysym_t keysym, char *buffer, size_t size);
 xkb_keysym_t xkb_keysym_from_name(const char *name, int flags);
 int xkb_keysym_to_utf8(xkb_keysym_t keysym, char *buffer, size_t size);
 ]]
@@ -37,7 +62,7 @@ local KEY_NAMES = {
     AE11 = "-", AE12 = "=",
     AD11 = "[", AD12 = "]",
     AC10 = ";", AC11 = "'", BKSL = "\\",
-    AB08 = ",", AB09 = ".", AB10 = "/", SPCE = " ",
+    AB08 = ",", AB09 = ".", AB10 = "/", LSGT = "<", SPCE = " ",
 }
 
 for number, key in ipairs({ "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" }) do
@@ -65,34 +90,6 @@ local function read_file(path)
     return content:gsub("//[^\n]*", "")
 end
 
-local function section_body(text, variant, source)
-    local _, section_end = text:find('xkb_symbols%s+"' .. variant .. '"%s*%{')
-    assert(section_end, ('%s: xkb_symbols "%s" not found'):format(source, variant))
-    local depth = 1
-    local position = section_end + 1
-    local start = position
-    while position <= #text and depth > 0 do
-        local character = text:sub(position, position)
-        if character == "{" then
-            depth = depth + 1
-        elseif character == "}" then
-            depth = depth - 1
-        end
-        position = position + 1
-    end
-    assert(depth == 0, source .. ": unclosed xkb_symbols section")
-    return text:sub(start, position - 2)
-end
-
-local function parse_include(include)
-    local layout, variant = include:match("^([%w%./+%-]+)%(([%w_%-]+)%)$")
-    if not layout then
-        layout = include:match("^[%w%./+%-]+$")
-    end
-    assert(layout, "unsupported include " .. include)
-    return layout, variant or "basic"
-end
-
 local function parse_keysym(name)
     if #name == 1 then return name end
     if name:match("^dead_[%w_]+$") then return { dead = name } end
@@ -103,42 +100,66 @@ local function parse_keysym(name)
     return length > 0 and ffi.string(buffer, length - 1) or nil
 end
 
-local function load_section(symbols_dir, layout, variant, seen)
-    local identity = layout .. "(" .. variant .. ")"
-    assert(not seen[identity], "cyclic include involving " .. identity)
-    seen[identity] = true
+local function parse_keysym_value(keysym)
+    local name = ffi.new("char[128]")
+    if xkbcommon.xkb_keysym_get_name(keysym, name, 128) <= 0 then return nil end
+    return parse_keysym(ffi.string(name))
+end
 
-    local body = section_body(read_file(symbols_dir .. "/" .. layout), variant, layout)
+local function modifier_mask(keymap, name)
+    local index = xkbcommon.xkb_keymap_mod_get_index(keymap, name)
+    return index < 32 and 2 ^ tonumber(index) or 0
+end
+
+local function load_layout(symbols_dir, layout, variant)
+    local context = xkbcommon.xkb_context_new(0)
+    assert(context ~= nil, "could not create XKB context")
+    local xkb_root = symbols_dir:gsub("/symbols/?$", "")
+    assert(xkbcommon.xkb_context_include_path_append(context, xkb_root) ~= 0, "could not add XKB include path " .. xkb_root)
+    local names = ffi.new("struct xkb_rule_names")
+    names.rules = "evdev"
+    names.model = "pc105"
+    names.layout = layout
+    names.variant = variant
+    local keymap = xkbcommon.xkb_keymap_new_from_names(context, names, 0)
+    xkbcommon.xkb_context_unref(context)
+    assert(keymap ~= nil, ("could not compile %s(%s)"):format(layout, variant))
+
+    local shift = modifier_mask(keymap, "Shift")
+    local altgr = modifier_mask(keymap, "Mod5")
+    local level_masks = {
+        [0] = 0,
+        [shift] = SHIFT,
+        [altgr] = ALTGR,
+        [shift + altgr] = SHIFT + ALTGR,
+    }
     local entries = {}
-    for include in body:gmatch('include%s+"([^"]+)"') do
-        local included_layout, included_variant = parse_include(include)
-        for key, levels in pairs(load_section(symbols_dir, included_layout, included_variant, seen)) do
-            entries[key] = levels
-        end
-    end
-    for xkb_key, symbols in body:gmatch("key%s+<([A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9])>%s*{%s*%[([^%]]*)%]") do
-        local key = KEY_NAMES[xkb_key]
-        if key then
+    for xkb_key, key in pairs(KEY_NAMES) do
+        local keycode = xkbcommon.xkb_keymap_key_by_name(keymap, xkb_key)
+        if keycode ~= 0 then
             local levels = {}
-            local level = 0
-            for keysym in (symbols .. ","):gmatch("(.-),") do
-                keysym = keysym:match("^%s*(.-)%s*$")
-                if level >= #LEVEL_MASKS then
-                    io.stderr:write(("warning: %s(%s) <%s>: more than four levels\n"):format(layout, variant, xkb_key))
-                    break
+            for level = 0, tonumber(xkbcommon.xkb_keymap_num_levels_for_key(keymap, keycode, 0)) - 1 do
+                local masks = ffi.new("xkb_mod_mask_t[16]")
+                local count = tonumber(xkbcommon.xkb_keymap_key_get_mods_for_level(keymap, keycode, 0, level, masks, 16))
+                for index = 0, count - 1 do
+                    local output_level = level_masks[tonumber(masks[index])]
+                    if output_level then
+                        local syms = ffi.new("const xkb_keysym_t *[1]")
+                        if xkbcommon.xkb_keymap_key_get_syms_by_level(keymap, keycode, 0, level, syms) == 1 then
+                            local value = parse_keysym_value(syms[0][0])
+                            if value then
+                                levels[output_level] = value
+                            else
+                                io.stderr:write(("warning: %s(%s) <%s>: unsupported keysym\n"):format(layout, variant, xkb_key))
+                            end
+                        end
+                    end
                 end
-                local value = parse_keysym(keysym)
-                if value then
-                    levels[LEVEL_MASKS[level + 1]] = value
-                else
-                    io.stderr:write(("warning: %s(%s) <%s>: unsupported keysym %s\n"):format(layout, variant, xkb_key, keysym))
-                end
-                level = level + 1
             end
             if next(levels) then entries[key] = levels end
         end
     end
-    seen[identity] = nil
+    xkbcommon.xkb_keymap_unref(keymap)
     return entries
 end
 
@@ -322,7 +343,7 @@ if arguments.all or arguments.all_variants then
     local skipped = 0
     local layouts = arguments.all_variants and available_koreader_layout_variants(arguments.symbols_dir) or available_koreader_layouts()
     for _, layout_info in ipairs(layouts) do
-        local success, entries = pcall(load_section, arguments.symbols_dir, layout_info.layout, layout_info.variant, {})
+        local success, entries = pcall(load_layout, arguments.symbols_dir, layout_info.layout, layout_info.variant)
         if success and next(entries) then
             entries[" "] = entries[" "] or { [0] = " ", [SHIFT] = " " }
             write_layout(output_dir .. "/" .. layout_info.language .. ".lua", render_layout(entries, layout_info.layout, layout_info.variant))
@@ -334,7 +355,7 @@ if arguments.all or arguments.all_variants then
     end
     io.write(("Wrote %d layouts to %s (%d skipped)\n"):format(written, output_dir, skipped))
 else
-    local entries = load_section(arguments.symbols_dir, arguments.layout, arguments.variant, {})
+    local entries = load_layout(arguments.symbols_dir, arguments.layout, arguments.variant)
     entries[" "] = entries[" "] or { [0] = " ", [SHIFT] = " " }
     local output = render_layout(entries, arguments.layout, arguments.variant)
     local is_terminal = ffi.C.isatty(1) ~= 0

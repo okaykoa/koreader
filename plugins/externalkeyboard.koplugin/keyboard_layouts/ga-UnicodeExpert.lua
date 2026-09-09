@@ -19,6 +19,7 @@ return {
     ["8"] = { "8", "*", { dead = "dead_abovering" }, { dead = "dead_abovering" } },
     ["9"] = { "9", "(", { dead = "dead_breve" }, { dead = "dead_breve" } },
     [";"] = { ";", ":", { dead = "dead_diaeresis" }, { dead = "dead_diaeresis" } },
+    ["<"] = { "\\", "|", { dead = "dead_grave" }, { dead = "dead_grave" } },
     ["="] = { "=", "+" },
     ["A"] = { "a", "A", "á", "Á" },
     ["B"] = { "b", "B" },

@@ -19,7 +19,7 @@ return {
     ["8"] = { "8", "„", "‚", "⟨" },
     ["9"] = { "9", "“", "‘", "⟩" },
     [";"] = { "d", "D", ":", "δ" },
-    ["="] = { { dead = "dead_grave" }, { dead = "dead_cedilla" }, { dead = "dead_abovering" }, { dead = "dead_dasia" } },
+    ["="] = { { dead = "dead_grave" }, { dead = "dead_cedilla" }, { dead = "dead_abovering" }, { dead = "dead_abovereversedcomma" } },
     ["A"] = { "u", "U", "\\" },
     ["B"] = { "z", "Z", "`", "ζ" },
     ["C"] = { "ä", "Ä", "|", "η" },
@@ -47,6 +47,6 @@ return {
     ["Y"] = { "k", "K", "!", "κ" },
     ["Z"] = { "ü", "Ü", "#" },
     ["["] = { "ß", "ẞ", "ſ", "ς" },
-    ["]"] = { { dead = "dead_acute" }, { dead = "dead_tilde" }, { dead = "dead_stroke" }, { dead = "dead_psili" } },
+    ["]"] = { { dead = "dead_acute" }, { dead = "dead_tilde" }, { dead = "dead_stroke" }, { dead = "dead_abovecomma" } },
     ["`"] = { { dead = "dead_circumflex" }, { dead = "dead_caron" }, "↻", "˞" },
 }

@@ -13,11 +13,11 @@ return {
     [14] = "Backspace",
     [15] = "Tab",
     [28] = "Press",  -- Enter
-    [29] = "LCtrl",
+    [29] = "Ctrl",
     [42] = "Shift",  -- Left Shift
-    [43] = "\\",
+    [43] = "\\", [86] = "<",
     [54] = "Shift",  -- Right Shift
-    [56] = "LAlt",
+    [56] = "Alt",
     [58] = "CapsLock",
     [57] = " ",
     [59] = "F1",
@@ -52,7 +52,7 @@ return {
     [97] = "Ctrl", -- Right Ctrl
     [98] = "Home",
     [99] = "PrintScr",  -- Also SysRq
-    [100] = "RAlt",
+    [100] = "AltGr",
     [102] = "Home",
     [103] = "Up",
     [104] = "LPgBack",  -- PageUp
@@ -67,8 +67,8 @@ return {
     [115] = "VPlus",
     [116] = "Power",
     [119] = "Pause",
-    [125] = "LMeta", -- Meta, Win, Cmd, etc.
-    [126] = "RMeta",
+    [125] = "Meta", -- Meta, Win, Cmd, etc.
+    [126] = "Meta",
     [127] = "Menu", -- Technically KEY_COMPOSE
     [139] = "Menu", -- Actually KEY_MENU
 }
