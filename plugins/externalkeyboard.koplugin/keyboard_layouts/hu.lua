@@ -2,8 +2,9 @@
 -- Derived from xkeyboard-config symbols data.
 -- SPDX-License-Identifier: MIT
 local _ = require("gettext")
+local C_ = _.pgettext
 return {
-    name = _("Hungarian"),
+    name = C_("Keyboard layout", "Hungarian"),
     [" "] = { " ", " " },
     ["'"] = { "á", "Á", "ß", "ẞ" },
     [","] = { ",", "?", ";", "×" },

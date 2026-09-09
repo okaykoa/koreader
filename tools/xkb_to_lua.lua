@@ -398,8 +398,9 @@ local function render_layout(entries, layout, variant, name)
         "-- Derived from xkeyboard-config symbols data.\n",
         "-- SPDX-License-Identifier: MIT\n",
         "local _ = require(\"gettext\")\n",
+        "local C_ = _.pgettext\n",
         "return {\n",
-        ("    name = _(%s),\n"):format(lua_string(name)),
+        ("    name = C_(\"Keyboard layout\", %s),\n"):format(lua_string(name)),
     }
     local keys = {}
     for key in pairs(entries) do table.insert(keys, key) end

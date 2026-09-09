@@ -2,8 +2,9 @@
 -- Derived from xkeyboard-config symbols data.
 -- SPDX-License-Identifier: MIT
 local _ = require("gettext")
+local C_ = _.pgettext
 return {
-    name = _("English (US, intl., with dead keys)"),
+    name = C_("Keyboard layout", "English (US, intl., with dead keys)"),
     [" "] = { " ", " " },
     ["'"] = { { dead = "dead_acute" }, { dead = "dead_diaeresis" }, "'", "\"" },
     [","] = { ",", "<", "ç", "Ç" },
