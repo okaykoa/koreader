@@ -66,6 +66,11 @@ local KEY_NAMES = {
     AB08 = ",", AB09 = ".", AB10 = "/", LSGT = "<", SPCE = " ",
 }
 
+local LEGACY_KEYSYM_CHARACTERS = {
+    Hebrew_nun = "\215\240",
+    hebrew_nun = "\215\240",
+}
+
 for number, key in ipairs({ "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" }) do
     KEY_NAMES[("AE%02d"):format(number)] = key
 end
@@ -94,6 +99,7 @@ end
 local function parse_keysym(name)
     if #name == 1 then return name end
     if name:match("^dead_[%w_]+$") then return { dead = name } end
+    if LEGACY_KEYSYM_CHARACTERS[name] then return LEGACY_KEYSYM_CHARACTERS[name] end
     local keysym = xkbcommon.xkb_keysym_from_name(name, 0)
     if keysym == 0 then return nil end
     local buffer = ffi.new("char[7]")
@@ -190,6 +196,7 @@ local KOREADER_XKB_LAYOUTS = {
 }
 
 local COMMON_XKB_LAYOUTS = {
+    -- Western European
     { "us", "us", "basic" },
     { "us-intl", "us", "intl" },
     { "us-altgr-intl", "us", "altgr-intl" },
@@ -201,6 +208,17 @@ local COMMON_XKB_LAYOUTS = {
     { "nl", "nl", "basic" },
     { "be", "be", "basic" },
     { "br", "br", "abnt2" },
+    -- Central / Eastern European
+    { "pl", "pl", "basic" },
+    { "cz", "cz", "basic" },
+    { "hu", "hu", "basic" },
+    { "ro", "ro", "basic" },
+    -- Other scripts
+    { "ru", "ru", "winkeys" },
+    { "uk", "ua", "unicode" },
+    { "el", "gr", "basic" },
+    { "ar", "ara", "basic" },
+    { "he", "il", "basic" },
 }
 
 -- KOReader interface languages that have no virtual keyboard layout, plus
