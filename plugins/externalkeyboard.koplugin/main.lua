@@ -213,7 +213,7 @@ function ExternalKeyboard:getKeyboardLayoutMenu()
         local layouts = layouts_by_language[language]
         table.sort(layouts)
         local layout_items = {}
-        for __, layout in ipairs(layouts) do
+        for dummy, layout in ipairs(layouts) do
             table.insert(layout_items, {
                 text = layout == language and _("Default") or layout:sub(#language + 2),
                 checked_func = function()
