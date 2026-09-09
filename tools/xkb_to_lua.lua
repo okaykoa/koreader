@@ -10,6 +10,7 @@ types, groups, or actions. Dead keys are preserved for runtime composition.
 Examples:
     tools/xkb_to_lua.lua us
     tools/xkb_to_lua.lua de > /tmp/de.lua
+    tools/xkb_to_lua.lua --all
 ]]--
 
 local DEFAULT_SYMBOLS_DIR = "/usr/share/X11/xkb/symbols"
@@ -140,8 +141,51 @@ local function load_section(symbols_dir, layout, variant, seen)
     return entries
 end
 
+local KOREADER_XKB_LAYOUTS = {
+    ar = { "ara", "basic" },
+    bg_BG = { "bg", "bds" },
+    bn = { "bd", "basic" },
+    cs = { "cz", "basic" },
+    da = { "dk", "basic" },
+    el = { "gr", "basic" },
+    en = { "us", "basic" },
+    fa = { "ir", "pes" },
+    he = { "il", "basic" },
+    ja = { "jp", "106" },
+    ka = { "ge", "basic" },
+    ko_KR = { "kr", "kr106" },
+    ml = { "in", "mal" },
+    nb_NO = { "no", "basic" },
+    pt_BR = { "br", "abnt2" },
+    ru = { "ru", "winkeys" },
+    sr = { "rs", "basic" },
+    sv = { "se", "basic" },
+    uk = { "ua", "unicode" },
+    vi = { "vn", "basic" },
+    zh = { "cn", "basic" },
+    zh_CN = { "cn", "basic" },
+}
+
+local function available_koreader_layouts()
+    local virtual_keyboard = read_file("frontend/ui/widget/virtualkeyboard.lua")
+    local map = virtual_keyboard:match("lang_to_keyboard_layout%s*=%s*{(.-)\n    },")
+    assert(map, "VirtualKeyboard.lang_to_keyboard_layout not found")
+    local layouts = {}
+    for language in map:gmatch("\n%s*([%w_]+)%s*=") do
+        local xkb_layout = KOREADER_XKB_LAYOUTS[language]
+        table.insert(layouts, {
+            language = language,
+            layout = xkb_layout and xkb_layout[1] or language:match("^[^_]+"),
+            variant = xkb_layout and xkb_layout[2] or "basic",
+        })
+    end
+    table.sort(layouts, function(left, right) return left.language < right.language end)
+    return layouts
+end
+
 local function usage()
     io.stderr:write("Usage: tools/xkb_to_lua.lua <layout> [--variant NAME] [--layout-name NAME] [--symbols-dir PATH] [--output PATH]\n")
+    io.stderr:write("       tools/xkb_to_lua.lua --all [--symbols-dir PATH] [--output-dir PATH]  # KOReader virtual keyboard layouts\n")
 end
 
 local function parse_arguments()
@@ -152,7 +196,9 @@ local function parse_arguments()
         if value == "--help" then
             usage()
             os.exit(0)
-        elseif value == "--variant" or value == "--layout-name" or value == "--symbols-dir" or value == "--output" then
+        elseif value == "--all" then
+            arguments.all = true
+        elseif value == "--variant" or value == "--layout-name" or value == "--symbols-dir" or value == "--output" or value == "--output-dir" then
             index = index + 1
             assert(arg[index], value .. " requires a value")
             arguments[value:sub(3):gsub("%-", "_")] = arg[index]
@@ -163,7 +209,9 @@ local function parse_arguments()
         end
         index = index + 1
     end
-    assert(arguments.layout, "layout is required")
+    assert(arguments.layout or arguments.all, "layout or --all is required")
+    assert(not (arguments.layout and arguments.all), "--all cannot be combined with a layout")
+    assert(not (arguments.all and (arguments.variant ~= "basic" or arguments.layout_name or arguments.output)), "--all only supports --symbols-dir and --output-dir")
     return arguments
 end
 
@@ -193,21 +241,43 @@ local function render_layout(entries, layout, variant)
     return table.concat(lines)
 end
 
-local arguments = parse_arguments()
-local entries = load_section(arguments.symbols_dir, arguments.layout, arguments.variant, {})
-entries[" "] = entries[" "] or { [0] = " ", [SHIFT] = " " }
-local output = render_layout(entries, arguments.layout, arguments.variant)
-local is_terminal = ffi.C.isatty(1) ~= 0
-local output_path = arguments.output
-if not output_path and is_terminal then
-    output_path = DEFAULT_OUTPUT_DIR .. "/" .. (arguments.layout_name or arguments.layout) .. ".lua"
-end
-if output_path then
-    local file, error_message = io.open(output_path, "w")
+local function write_layout(path, output)
+    local file, error_message = io.open(path, "w")
     assert(file, error_message)
     file:write(output)
     file:close()
-    io.write("Wrote " .. output_path .. "\n")
+end
+
+local arguments = parse_arguments()
+if arguments.all then
+    local output_dir = arguments.output_dir or DEFAULT_OUTPUT_DIR
+    local written = 0
+    local skipped = 0
+    for _, layout_info in ipairs(available_koreader_layouts()) do
+        local success, entries = pcall(load_section, arguments.symbols_dir, layout_info.layout, layout_info.variant, {})
+        if success and next(entries) then
+            entries[" "] = entries[" "] or { [0] = " ", [SHIFT] = " " }
+            write_layout(output_dir .. "/" .. layout_info.language .. ".lua", render_layout(entries, layout_info.layout, layout_info.variant))
+            written = written + 1
+        else
+            io.stderr:write(("warning: skipped %s (%s/%s): %s\n"):format(layout_info.language, layout_info.layout, layout_info.variant, success and "no supported keys" or entries))
+            skipped = skipped + 1
+        end
+    end
+    io.write(("Wrote %d layouts to %s (%d skipped)\n"):format(written, output_dir, skipped))
 else
-    io.write(output)
+    local entries = load_section(arguments.symbols_dir, arguments.layout, arguments.variant, {})
+    entries[" "] = entries[" "] or { [0] = " ", [SHIFT] = " " }
+    local output = render_layout(entries, arguments.layout, arguments.variant)
+    local is_terminal = ffi.C.isatty(1) ~= 0
+    local output_path = arguments.output
+    if not output_path and is_terminal then
+        output_path = DEFAULT_OUTPUT_DIR .. "/" .. (arguments.layout_name or arguments.layout) .. ".lua"
+    end
+    if output_path then
+        write_layout(output_path, output)
+        io.write("Wrote " .. output_path .. "\n")
+    else
+        io.write(output)
+    end
 end
