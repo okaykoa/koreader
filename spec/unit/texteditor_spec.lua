@@ -15,15 +15,33 @@ describe("TextEditor module", function()
 
     describe("saveAs", function()
         it("derives the starting folder from the path of the file being edited", function()
-            local seen_path, seen_content
-            stub(TextEditor, "_showSaveAsDialog", function(_, new_path, content)
-                seen_path, seen_content = new_path, content
-            end)
-            TextEditor.input = { getInputText = function() return "buffer text" end }
+            local seen_path
+            stub(TextEditor, "_showSaveAsDialog", function(_, new_path) seen_path = new_path end)
             TextEditor:saveAs("/mnt/us/notes/todo.txt")
             assert.equals("/mnt/us/notes/", seen_path)
-            assert.equals("buffer text", seen_content)
             TextEditor._showSaveAsDialog:revert()
+        end)
+
+        it("does not read the editor's buffer until Save is pressed", function()
+            local get_input_text = spy.new(function() return "buffer text" end)
+            TextEditor.input = { getInputText = get_input_text, handleEvent = function() end }
+            local captured
+            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+
+            TextEditor:saveAs("/mnt/us/notes/todo.txt")
+            assert.spy(get_input_text).was.called(0)
+
+            stub(captured, "getInputText", function() return "/mnt/us/notes/todo.txt" end)
+            stub(TextEditor, "saveFileContent", function() return true end)
+            stub(TextEditor, "checkEditFile", function() end)
+            captured.buttons[2][2].callback() -- "Save"
+
+            assert.spy(get_input_text).was.called(1)
+            assert.spy(TextEditor.saveFileContent).was.called_with(TextEditor, "/mnt/us/notes/todo.txt", "buffer text")
+
+            require("ui/uimanager").show:revert()
+            TextEditor.saveFileContent:revert()
+            TextEditor.checkEditFile:revert()
         end)
 
         it("falls back to self.last_path when no file is currently being edited", function()

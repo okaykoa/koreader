@@ -727,14 +727,13 @@ end
 -- editing that new file. Mirrors newFile()'s prompt (InputDialog + folder
 -- picker) and reuses saveFileContent()/checkEditFile().
 function TextEditor:saveAs(edited_file_path)
-    local content = self.input and self.input:getInputText() or ""
     local dir = (edited_file_path and edited_file_path:match("(.*)/")) or self.last_path
     if not dir or dir == "" then dir = "/" end
     local start_folder = dir == "/" and "/" or dir .. "/"
-    self:_showSaveAsDialog(start_folder, content)
+    self:_showSaveAsDialog(start_folder)
 end
 
-function TextEditor:_showSaveAsDialog(new_path, content)
+function TextEditor:_showSaveAsDialog(new_path)
     local file_input
     file_input = InputDialog:new{
         title = _("Save as"),
@@ -749,7 +748,7 @@ function TextEditor:_showSaveAsDialog(new_path, content)
                             select_file = false,
                             path = new_path:match("(.*)/"),
                             onConfirm = function(dir_path)
-                                self:_showSaveAsDialog(dir_path .. "/", content)
+                                self:_showSaveAsDialog(dir_path .. "/")
                             end,
                         })
                     end,
@@ -768,6 +767,7 @@ function TextEditor:_showSaveAsDialog(new_path, content)
                     is_enter_default = true,
                     callback = function()
                         local save_path = file_input:getInputText()
+                        local content = self.input and self.input:getInputText() or ""
                         UIManager:close(file_input)
                         if save_path and save_path ~= "" then
                             self.last_path = save_path:match("(.*)/")
