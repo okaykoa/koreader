@@ -680,18 +680,6 @@ function FileManager:getPlusDialogButtons()
             },
             {
                 {
-                    text = _("New text file"),
-                    enabled = self.texteditor and true or false,
-                    callback = function()
-                        UIManager:close(self.plus_dialog)
-                        if self.texteditor then
-                            self.texteditor:newFile(folder, nil, true)
-                        end
-                    end,
-                },
-            },
-            {
-                {
                     text = _("Paste"),
                     enabled = self.clipboard and true or false,
                     callback = function()
@@ -740,6 +728,18 @@ function FileManager:getPlusDialogButtons()
                 self.folder_shortcuts:genAddRemoveShortcutButton(folder, close_dialog_callback, refresh_titlebar_callback),
             },
         }
+
+        if self.texteditor then
+            table.insert(buttons, 3, {
+                {
+                    text = _("New text file"),
+                    callback = function()
+                        UIManager:close(self.plus_dialog)
+                        self.texteditor:newFile(folder, nil, true)
+                    end,
+                },
+            })
+        end
 
         if Device:hasExternalSD() then
             table.insert(buttons, 4, { -- after "Paste" or "Import files here" button
