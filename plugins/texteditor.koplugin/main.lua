@@ -724,8 +724,7 @@ function TextEditor:showMenu(edited_file_path)
 end
 
 -- Save the current buffer to a new path chosen by the user, then continue
--- editing that new file. Mirrors newFile()'s prompt (InputDialog + folder
--- picker) and reuses saveFileContent()/checkEditFile().
+-- editing that new file.
 function TextEditor:saveAs(edited_file_path)
     local dir = (edited_file_path and edited_file_path:match("(.*)/")) or self.last_path
     if not dir or dir == "" then dir = "/" end
