@@ -26,7 +26,9 @@ describe("TextEditor module", function()
             local get_input_text = spy.new(function() return "buffer text" end)
             TextEditor.input = { getInputText = get_input_text, handleEvent = function() end }
             local captured
-            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            -- UIManager:show(widget) is a method call, so the stub receives
+            -- (UIManager, widget) — capture the second argument, not the first.
+            stub(require("ui/uimanager"), "show", function(_, w) captured = w end)
 
             TextEditor:saveAs("/mnt/us/notes/todo.txt")
             assert.spy(get_input_text).was.called(0)
@@ -47,7 +49,7 @@ describe("TextEditor module", function()
         it("does nothing when the Save as path is left empty", function()
             TextEditor.input = { getInputText = function() return "buffer text" end }
             local captured
-            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            stub(require("ui/uimanager"), "show", function(_, w) captured = w end)
             TextEditor:saveAs("/mnt/us/notes/todo.txt")
 
             stub(captured, "getInputText", function() return "" end)
@@ -63,7 +65,7 @@ describe("TextEditor module", function()
             local editor_widget = { getInputText = function() return "buffer text" end, handleEvent = function() end }
             TextEditor.input = editor_widget
             local captured
-            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            stub(require("ui/uimanager"), "show", function(_, w) captured = w end)
             TextEditor:saveAs("/mnt/us/notes/todo.txt")
 
             stub(captured, "getInputText", function() return "/mnt/us/notes/todo.txt" end)
@@ -93,7 +95,7 @@ describe("TextEditor module", function()
     describe("newFile", function()
         local function capturedInput()
             local captured
-            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            stub(require("ui/uimanager"), "show", function(_, w) captured = w end)
             return function() return captured end
         end
 
@@ -131,7 +133,7 @@ describe("TextEditor module", function()
     describe("showMenu", function()
         it("puts Save as first, followed by a separator, before the rotation buttons", function()
             local captured
-            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            stub(require("ui/uimanager"), "show", function(_, w) captured = w end)
             TextEditor:showMenu("/mnt/us/notes.txt")
             assert.equals(_("Save as"), captured.buttons[1][1].text)
             assert.equals(0, #captured.buttons[2])
@@ -162,7 +164,7 @@ describe("TextEditor module", function()
         it("shows an error and does not close the editor when the path is invalid", function()
             TextEditor.input = { getInputText = function() return "buffer text" end }
             local captured
-            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            stub(require("ui/uimanager"), "show", function(_, w) captured = w end)
             TextEditor:saveAs("/mnt/us/notes/todo.txt")
 
             stub(captured, "getInputText", function() return "/mnt/us/notes/" end)
@@ -181,7 +183,7 @@ describe("TextEditor module", function()
         it("shows an error and does not close the editor when saveFileContent fails", function()
             TextEditor.input = { getInputText = function() return "buffer text" end }
             local captured
-            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            stub(require("ui/uimanager"), "show", function(_, w) captured = w end)
             TextEditor:saveAs("/mnt/us/notes/todo.txt")
 
             stub(captured, "getInputText", function() return "/mnt/us/notes/todo.txt" end)
