@@ -681,7 +681,7 @@ function TextEditor:quickEditFile(file_path, done_callback, possible_new_file)
 end
 
 -- TitleBar left button tap
-function TextEditor:showMenu(file_path)
+function TextEditor:showMenu(edited_file_path)
     local dialog
     local buttons = {}
     local optionsutil = require("ui/data/optionsutil")
@@ -701,7 +701,7 @@ function TextEditor:showMenu(file_path)
         text = _("Save as"),
         callback = function()
             UIManager:close(dialog)
-            self:saveAs(file_path)
+            self:saveAs(edited_file_path)
         end,
     }})
     dialog = ButtonDialog:new{
@@ -718,12 +718,12 @@ end
 -- Save the current buffer to a new path chosen by the user, then continue
 -- editing that new file. Mirrors newFile()'s prompt (InputDialog + folder
 -- picker) and reuses saveFileContent()/checkEditFile().
-function TextEditor:saveAs(file_path)
+function TextEditor:saveAs(edited_file_path)
     local content = self.input and self.input:getInputText() or ""
-    local dir = (file_path and file_path:match("(.*)/")) or self.last_path
+    local dir = (edited_file_path and edited_file_path:match("(.*)/")) or self.last_path
     if not dir or dir == "" then dir = "/" end
-    local start_path = dir == "/" and "/" or dir .. "/"
-    self:_showSaveAsDialog(start_path, content)
+    local start_folder = dir == "/" and "/" or dir .. "/"
+    self:_showSaveAsDialog(start_folder, content)
 end
 
 function TextEditor:_showSaveAsDialog(new_path, content)
