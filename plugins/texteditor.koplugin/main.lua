@@ -769,7 +769,7 @@ function TextEditor:_showSaveAsDialog(new_path)
                         local save_path = file_input:getInputText()
                         local content = self.input and self.input:getInputText() or ""
                         UIManager:close(file_input)
-                        if save_path and save_path ~= "" then
+                        if save_path ~= "" then
                             self.last_path = save_path:match("(.*)/")
                             if not self.last_path or self.last_path == "" then self.last_path = "/" end
                             if self:saveFileContent(save_path, content) then

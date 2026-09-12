@@ -44,6 +44,21 @@ describe("TextEditor module", function()
             TextEditor.checkEditFile:revert()
         end)
 
+        it("does nothing when the Save as path is left empty", function()
+            TextEditor.input = { getInputText = function() return "buffer text" end }
+            local captured
+            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            TextEditor:saveAs("/mnt/us/notes/todo.txt")
+
+            stub(captured, "getInputText", function() return "" end)
+            stub(TextEditor, "saveFileContent", function() return true end)
+            captured.buttons[2][2].callback()
+            assert.spy(TextEditor.saveFileContent).was.called(0)
+
+            require("ui/uimanager").show:revert()
+            TextEditor.saveFileContent:revert()
+        end)
+
         it("falls back to self.last_path when no file is currently being edited", function()
             local seen_path
             stub(TextEditor, "_showSaveAsDialog", function(_, new_path) seen_path = new_path end)
