@@ -59,6 +59,26 @@ describe("TextEditor module", function()
             TextEditor.saveFileContent:revert()
         end)
 
+        it("closes the current editor by calling UIManager:close(self.input) directly", function()
+            local editor_widget = { getInputText = function() return "buffer text" end, handleEvent = function() end }
+            TextEditor.input = editor_widget
+            local captured
+            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            TextEditor:saveAs("/mnt/us/notes/todo.txt")
+
+            stub(captured, "getInputText", function() return "/mnt/us/notes/todo.txt" end)
+            stub(TextEditor, "saveFileContent", function() return true end)
+            stub(TextEditor, "checkEditFile", function() end)
+            local close_spy = spy.on(require("ui/uimanager"), "close")
+            captured.buttons[2][2].callback()
+            assert.spy(close_spy).was.called_with(require("ui/uimanager"), editor_widget)
+
+            require("ui/uimanager").show:revert()
+            require("ui/uimanager").close:revert()
+            TextEditor.saveFileContent:revert()
+            TextEditor.checkEditFile:revert()
+        end)
+
         it("falls back to self.last_path when no file is currently being edited", function()
             local seen_path
             stub(TextEditor, "_showSaveAsDialog", function(_, new_path) seen_path = new_path end)

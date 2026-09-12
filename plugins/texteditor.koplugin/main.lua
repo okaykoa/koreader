@@ -779,10 +779,7 @@ function TextEditor:_showSaveAsDialog(new_path)
                                 -- field) runs against the correct dialog. saveFileContent above
                                 -- was called without a caller_callback, so self.caller_callback
                                 -- is already cleared and won't fire spuriously on this close.
-                                local current_editor = self.input
-                                if current_editor then
-                                    UIManager:close(current_editor)
-                                end
+                                UIManager:close(self.input)
                                 self:checkEditFile(save_path, false, true)
                             end
                         end
