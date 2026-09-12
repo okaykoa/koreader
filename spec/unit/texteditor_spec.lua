@@ -139,4 +139,61 @@ describe("TextEditor module", function()
             require("ui/uimanager").show:revert()
         end)
     end)
+
+    describe("isValidSavePath", function()
+        it("rejects a directory path (trailing slash)", function()
+            assert.is_false(TextEditor:isValidSavePath("/mnt/us/koreader/"))
+        end)
+
+        it("rejects a bare filename with no folder", function()
+            assert.is_false(TextEditor:isValidSavePath("foobar.txt"))
+        end)
+
+        it("rejects an empty path", function()
+            assert.is_false(TextEditor:isValidSavePath(""))
+        end)
+
+        it("accepts an absolute file path", function()
+            assert.is_true(TextEditor:isValidSavePath("/mnt/us/koreader/foobar.txt"))
+        end)
+    end)
+
+    describe("Save as failure handling", function()
+        it("shows an error and does not close the editor when the path is invalid", function()
+            TextEditor.input = { getInputText = function() return "buffer text" end }
+            local captured
+            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            TextEditor:saveAs("/mnt/us/notes/todo.txt")
+
+            stub(captured, "getInputText", function() return "/mnt/us/notes/" end)
+            stub(TextEditor, "saveFileContent", function() return true end)
+            local close_spy = spy.on(require("ui/uimanager"), "close")
+            captured.buttons[2][2].callback()
+
+            assert.spy(TextEditor.saveFileContent).was.called(0)
+            assert.spy(close_spy).was_not.called_with(require("ui/uimanager"), TextEditor.input)
+
+            require("ui/uimanager").show:revert()
+            require("ui/uimanager").close:revert()
+            TextEditor.saveFileContent:revert()
+        end)
+
+        it("shows an error and does not close the editor when saveFileContent fails", function()
+            TextEditor.input = { getInputText = function() return "buffer text" end }
+            local captured
+            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            TextEditor:saveAs("/mnt/us/notes/todo.txt")
+
+            stub(captured, "getInputText", function() return "/mnt/us/notes/todo.txt" end)
+            stub(TextEditor, "saveFileContent", function() return false, "Permission denied" end)
+            local close_spy = spy.on(require("ui/uimanager"), "close")
+            captured.buttons[2][2].callback()
+
+            assert.spy(close_spy).was_not.called_with(require("ui/uimanager"), TextEditor.input)
+
+            require("ui/uimanager").show:revert()
+            require("ui/uimanager").close:revert()
+            TextEditor.saveFileContent:revert()
+        end)
+    end)
 end)

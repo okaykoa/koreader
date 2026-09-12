@@ -733,6 +733,10 @@ function TextEditor:saveAs(edited_file_path)
     self:_showSaveAsDialog(start_folder)
 end
 
+function TextEditor:isValidSavePath(path)
+    return path ~= "" and path:sub(1, 1) == "/" and path:sub(-1) ~= "/"
+end
+
 function TextEditor:_showSaveAsDialog(new_path)
     local file_input
     file_input = InputDialog:new{
@@ -770,9 +774,16 @@ function TextEditor:_showSaveAsDialog(new_path)
                         local content = self.input and self.input:getInputText() or ""
                         UIManager:close(file_input)
                         if save_path ~= "" then
+                            if not self:isValidSavePath(save_path) then
+                                UIManager:show(InfoMessage:new{
+                                    text = T(_("Not a valid file path:\n\n%1"), BD.filepath(save_path)),
+                                })
+                                return
+                            end
                             self.last_path = save_path:match("(.*)/")
                             if not self.last_path or self.last_path == "" then self.last_path = "/" end
-                            if self:saveFileContent(save_path, content) then
+                            local ok, err = self:saveFileContent(save_path, content)
+                            if ok then
                                 -- Close the editor we launched Save as from before opening the
                                 -- new file, so we don't stack a second editor on the window
                                 -- stack and its close_callback (which reads the self.input
@@ -781,6 +792,10 @@ function TextEditor:_showSaveAsDialog(new_path)
                                 -- is already cleared and won't fire spuriously on this close.
                                 UIManager:close(self.input)
                                 self:checkEditFile(save_path, false, true)
+                            else
+                                UIManager:show(InfoMessage:new{
+                                    text = T(_("This file can not be saved:\n\n%1\n\nReason: %2"), BD.filepath(save_path), err),
+                                })
                             end
                         end
                     end,
