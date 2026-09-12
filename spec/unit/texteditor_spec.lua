@@ -35,4 +35,42 @@ describe("TextEditor module", function()
             TextEditor._showSaveAsDialog:revert()
         end)
     end)
+
+    describe("newFile", function()
+        local function capturedInput()
+            local captured
+            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            return function() return captured end
+        end
+
+        it("appends a trailing slash to a caller-provided folder that lacks one", function()
+            local get_captured = capturedInput()
+            TextEditor:newFile("/mnt/us/books", nil, true)
+            assert.equals("/mnt/us/books/", get_captured().input)
+            require("ui/uimanager").show:revert()
+        end)
+
+        it("leaves a caller-provided folder alone when it already ends in a slash", function()
+            local get_captured = capturedInput()
+            TextEditor:newFile("/mnt/us/books/", nil, true)
+            assert.equals("/mnt/us/books/", get_captured().input)
+            require("ui/uimanager").show:revert()
+        end)
+
+        it("falls back to self.last_path, normalized, when no path is given", function()
+            local get_captured = capturedInput()
+            TextEditor.settings = { readSetting = function() return nil end, has = function() return false end, nilOrTrue = function() return true end, isTrue = function() return false end }
+            TextEditor.last_path = "/mnt/us"
+            TextEditor:newFile(nil)
+            assert.equals("/mnt/us/", get_captured().input)
+            require("ui/uimanager").show:revert()
+        end)
+
+        it("does not touch a caller-provided file path when is_folder is not set", function()
+            local get_captured = capturedInput()
+            TextEditor:newFile("/mnt/us/notebook.txt")
+            assert.equals("/mnt/us/notebook.txt", get_captured().input)
+            require("ui/uimanager").show:revert()
+        end)
+    end)
 end)

@@ -336,9 +336,15 @@ function TextEditor:addToHistory(file_path)
     self.history = new_history
 end
 
-function TextEditor:newFile(new_path, caller_callback)
+function TextEditor:newFile(new_path, caller_callback, is_folder)
     self:loadSettings()
-    new_path = new_path or (self.last_path == "/" and "/" or self.last_path .. "/")
+    if not new_path then
+        new_path = self.last_path
+        is_folder = true
+    end
+    if is_folder and new_path ~= "/" and new_path:sub(-1) ~= "/" then
+        new_path = new_path .. "/"
+    end
     local file_input
     file_input = InputDialog:new{
         title =  _("Enter filename"),
