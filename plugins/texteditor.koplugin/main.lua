@@ -689,10 +689,19 @@ end
 -- TitleBar left button tap
 function TextEditor:showMenu(edited_file_path)
     local dialog
-    local buttons = {}
+    local buttons = {
+        {{
+            text = _("Save as"),
+            callback = function()
+                UIManager:close(dialog)
+                self:saveAs(edited_file_path)
+            end,
+        }},
+        {}, -- separator
+    }
     local optionsutil = require("ui/data/optionsutil")
     for i, mode in ipairs(optionsutil.rotation_modes) do
-        buttons[i] = {{
+        table.insert(buttons, {{
             text = optionsutil.rotation_labels[i],
             enabled_func = function()
                 return optionsutil.rotation_modes[i] ~= Screen:getRotationMode()
@@ -701,15 +710,8 @@ function TextEditor:showMenu(edited_file_path)
                 UIManager:close(dialog)
                 self.input:onSetRotationMode(optionsutil.rotation_modes[i])
             end,
-        }}
+        }})
     end
-    table.insert(buttons, {{
-        text = _("Save as"),
-        callback = function()
-            UIManager:close(dialog)
-            self:saveAs(edited_file_path)
-        end,
-    }})
     dialog = ButtonDialog:new{
         shrink_unneeded_width = true,
         buttons = buttons,

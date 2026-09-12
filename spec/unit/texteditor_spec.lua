@@ -1,5 +1,6 @@
 describe("TextEditor module", function()
     local TextEditor
+    local _ = require("gettext")
 
     setup(function()
         require("commonrequire")
@@ -70,6 +71,18 @@ describe("TextEditor module", function()
             local get_captured = capturedInput()
             TextEditor:newFile("/mnt/us/notebook.txt")
             assert.equals("/mnt/us/notebook.txt", get_captured().input)
+            require("ui/uimanager").show:revert()
+        end)
+    end)
+
+    describe("showMenu", function()
+        it("puts Save as first, followed by a separator, before the rotation buttons", function()
+            local captured
+            stub(require("ui/uimanager"), "show", function(w) captured = w end)
+            TextEditor:showMenu("/mnt/us/notes.txt")
+            assert.equals(_("Save as"), captured.buttons[1][1].text)
+            assert.equals(0, #captured.buttons[2])
+            assert.is_true(#captured.buttons > 2)
             require("ui/uimanager").show:revert()
         end)
     end)
