@@ -190,6 +190,7 @@ describe("TextEditor module", function()
             captured.buttons[2][2].callback()
 
             assert.spy(close_spy).was_not.called_with(require("ui/uimanager"), TextEditor.input)
+            assert.is_truthy(captured.text and captured.text:find("Permission denied", 1, true))
 
             require("ui/uimanager").show:revert()
             require("ui/uimanager").close:revert()

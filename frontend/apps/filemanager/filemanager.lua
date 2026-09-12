@@ -729,18 +729,6 @@ function FileManager:getPlusDialogButtons()
             },
         }
 
-        if self.texteditor then
-            table.insert(buttons, 3, {
-                {
-                    text = _("New text file"),
-                    callback = function()
-                        UIManager:close(self.plus_dialog)
-                        self.texteditor:newFile(folder, nil, true)
-                    end,
-                },
-            })
-        end
-
         if Device:hasExternalSD() then
             table.insert(buttons, 4, { -- after "Paste" or "Import files here" button
                 {
@@ -771,6 +759,18 @@ function FileManager:getPlusDialogButtons()
                     callback = function()
                         UIManager:close(self.plus_dialog)
                         Device.importFile(folder)
+                    end,
+                },
+            })
+        end
+
+        if self.texteditor then
+            table.insert(buttons, 3, {
+                {
+                    text = _("New text file"),
+                    callback = function()
+                        UIManager:close(self.plus_dialog)
+                        self.texteditor:newFile(folder, nil, true)
                     end,
                 },
             })
